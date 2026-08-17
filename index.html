@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MediIndia Care | Your Health, Our Priority</title>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --blue: #1769d2;
+      --dark-blue: #0d2342;
+      --green: #18a77a;
+      --light-blue: #f3f8ff;
+      --text: #18263b;
+      --muted: #687589;
+      --border: #e4eaf2;
+      --white: #ffffff;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--text);
+      background: #fff;
+      line-height: 1.6;
+    }
+
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    /* NAVBAR */
+
+    .navbar {
+      height: 78px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 5%;
+      background: rgba(255,255,255,0.98);
+      border-bottom: 1px solid #eef1f5;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+    }
+
+    .logo-icon {
+      width: 43px;
+      height: 43px;
+      border: 3px solid var(--blue);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--blue);
+      font-size: 24px;
+      font-weight: bold;
+      position: relative;
+    }
+
+    .logo-icon::after {
+      content: "";
+      width: 11px;
+      height: 11px;
+      border: 2px solid var(--green);
+      border-radius: 50%;
+      position: absolute;
+      right: -6px;
+      bottom: -3px;
+      background: white;
+    }
+
+    .logo-name {
+      color: var(--blue);
+      font-size: 21px;
+      font-weight: 700;
+    }
+
+    .logo-tagline {
+      color: #718096;
+      font-size: 11px;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 30px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .nav-links a {
+      transition: 0.2s;
+    }
+
+    .nav-links a:hover {
+      color: var(--blue);
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .login-btn,
+    .signup-btn {
+      padding: 11px 25px;
+      border-radius: 9px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .login-btn {
+      background: white;
+      color: var(--blue);
+      border: 1px solid var(--blue);
+    }
+
+    .signup-btn {
+      background: var(--blue);
+      color: white;
+      border: 1px solid var(--blue);
+    }
+
+    /* HERO */
+
+    .hero {
+      min-height: 560px;
+      background:
+        linear-gradient(90deg, #f4faff 0%, #edf7ff 52%, rgba(237,247,255,0.45) 100%);
+      position: relative;
+      overflow: hidden;
+      padding: 72px 5% 0;
+    }
+
+    .hero-content {
+      max-width: 650px;
+      position: relative;
+      z-index: 3;
+    }
+
+    .trust-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #def7ed;
+      color: #16785b;
+      padding: 8px 16px;
+      border-radius: 30px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 22px;
+    }
+
+    .hero h1 {
+      font-size: clamp(42px, 5vw, 64px);
+      line-height: 1.08;
+      color: var(--dark-blue);
+      margin-bottom: 22px;
+      letter-spacing: -2px;
+    }
+
+    .hero h1 span {
+      color: var(--blue);
+    }
+
+    .hero-description {
+      color: #536276;
+      font-size: 17px;
+      max-width: 600px;
+      margin-bottom: 30px;
+    }
+
+    /* SEARCH */
+
+    .search-box {
+      background: white;
+      border-radius: 15px;
+      padding: 9px;
+      display: flex;
+      align-items: center;
+      max-width: 880px;
+      box-shadow: 0 12px 35px rgba(25, 70, 120, 0.13);
+      position: relative;
+      z-index: 10;
+    }
+
+    .search-field {
+      flex: 1;
+      padding: 14px 16px;
+      border: none;
+      outline: none;
+      min-width: 0;
+      color: var(--text);
+    }
+
+    .search-field::placeholder {
+      color: #8490a0;
+    }
+
+    .city-select,
+    .category-select {
+      border: none;
+      border-left: 1px solid #e5eaf0;
+      padding: 14px 18px;
+      outline: none;
+      color: #536276;
+      background: white;
+      min-width: 150px;
+    }
+
+    .search-btn {
+      border: none;
+      background: var(--blue);
+      color: white;
+      padding: 14px 25px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: 0.2s;
+    }
+
+    .search-btn:hover {
+      background: #0f56b2;
+    }
+
+    /* HERO DECORATION */
+
+    .hero-visual {
+      position: absolute;
+      right: -50px;
+      top: 0;
+      width: 48%;
+      height: 100%;
+      z-index: 1;
+      overflow: hidden;
+    }
+
+    .taj {
+      width: 100%;
+      height: 100%;
+      background:
+        linear-gradient(135deg, rgba(24,105,210,0.12), rgba(24,167,122,0.05)),
+        radial-gradient(circle at 50% 48%, #fff 0 8%, #e8eef5 8.5% 9%, transparent 9.5%),
+        linear-gradient(to bottom, #bde3ff 0%, #eaf7ff 48%, #d4ecdf 49%, #b9d7bd 100%);
+      position: relative;
+    }
+
+    .taj::before {
+      content: "TAJ MAHAL";
+      position: absolute;
+      top: 45%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: clamp(24px, 4vw, 55px);
+      font-weight: 800;
+      letter-spacing: 5px;
+      color: rgba(255,255,255,0.95);
+      text-shadow: 0 3px 20px rgba(0,0,0,0.18);
+    }
+
+    .taj::after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 15%;
+      width: 70%;
+      height: 25%;
+      background: linear-gradient(to bottom, rgba(255,255,255,0.7), rgba(115,166,125,0.3));
+      clip-path: polygon(40% 0, 60% 0, 100% 100%, 0 100%);
+    }
+
+    /* STATS */
+
+    .stats {
+      max-width: 1200px;
+      margin: -55px auto 0;
+      position: relative;
+      z-index: 20;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 12px 35px rgba(28, 65, 110, 0.12);
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      padding: 25px;
+    }
+
+    .stat {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      justify-content: center;
+      border-right: 1px solid #e7ebf0;
+    }
+
+    .stat:last-child {
+      border-right: none;
+    }
+
+    .stat-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: #edf5ff;
+      color: var(--blue);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 21px;
+      font-weight: bold;
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 21px;
+      color: var(--dark-blue);
+    }
+
+    .stat span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    /* SECTIONS */
+
+    .section {
+      padding: 70px 5%;
+    }
+
+    .section-title {
+      text-align: center;
+      color: var(--dark-blue);
+      font-size: 31px;
+      margin-bottom: 42px;
+    }
+
+    /* WHY INDIA */
+
+    .why-section {
+      background: white;
+    }
+
+    .why-grid {
+      max-width: 1200px;
+      margin: auto;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 25px;
+    }
+
+    .why-card {
+      padding: 25px;
+      text-align: center;
+      border-right: 1px solid #e7ebf0;
+    }
+
+    .why-card:last-child {
+      border-right: none;
+    }
+
+    .why-icon {
+      width: 58px;
+      height: 58px;
+      background: #edf5ff;
+      color: var(--blue);
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-weight: bold;
+      font-size: 23px;
+      margin: 0 auto 16px;
+    }
+
+    .why-card h3 {
+      font-size: 16px;
+      margin-bottom: 8px;
+      color: var(--dark-blue);
+    }
+
+    .why-card p {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    /* TREATMENTS */
+
+    .treatments-section {
+      background: var(--light-blue);
+    }
+
+    .section-heading {
+      max-width: 1200px;
+      margin: auto auto 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .section-heading h2 {
+      color: var(--dark-blue);
+      font-size: 30px;
+    }
+
+    .view-all {
+      color: var(--blue);
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .treatment-grid {
+      max-width: 1200px;
+      margin: auto;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+    }
+
+    .treatment-card {
+      background: white;
+      border: 1px solid #e5eaf0;
+      border-radius: 15px;
+      padding: 20px;
+      transition: 0.25s;
+      cursor: pointer;
+    }
+
+    .treatment-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 12px 30px rgba(20, 70, 120, 0.12);
+      border-color: #c8dcf5;
+    }
+
+    .treatment-image {
+      height: 135px;
+      border-radius: 11px;
+      margin-bottom: 18px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 38px;
+      font-weight: bold;
+      color: white;
+    }
+
+    .cardiac {
+      background: linear-gradient(135deg, #1467b8, #45a9dd);
+    }
+
+    .cosmetic {
+      background: linear-gradient(135deg, #a27b9b, #e7b5cf);
+    }
+
+    .dental {
+      background: linear-gradient(135deg, #179c9c, #80d7d7);
+    }
+
+    .fertility {
+      background: linear-gradient(135deg, #c79a9c, #edc8c8);
+    }
+
+    .treatment-card h3 {
+      color: var(--dark-blue);
+      margin-bottom: 7px;
+      font-size: 17px;
+    }
+
+    .treatment-card p {
+      color: var(--muted);
+      font-size: 13px;
+      min-height: 44px;
+    }
+
+    .price {
+      color: var(--blue);
+      font-weight: 700;
+      margin-top: 13px;
+      font-size: 14px;
+    }
+
+    /* HOW IT WORKS */
+
+    .steps {
+      max-width: 1050px;
+      margin: auto;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 35px;
+      position: relative;
+    }
+
+    .step {
+      text-align: center;
+      position: relative;
+    }
+
+    .step-number {
+      width: 62px;
+      height: 62px;
+      margin: 0 auto 18px;
+      background: #edf5ff;
+      color: var(--blue);
+      border: 2px solid #cfe1f8;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-weight: 800;
+      font-size: 20px;
+    }
+
+    .step h3 {
+      color: var(--dark-blue);
+      margin-bottom: 8px;
+      font-size: 17px;
+    }
+
+    .step p {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    /* CTA */
+
+    .cta {
+      margin: 20px 5% 70px;
+      border-radius: 22px;
+      padding: 65px 30px;
+      text-align: center;
+      color: white;
+      background: linear-gradient(120deg, #105ebc, #1683d8);
+    }
+
+    .cta h2 {
+      font-size: 34px;
+      margin-bottom: 12px;
+    }
+
+    .cta p {
+      opacity: 0.9;
+      max-width: 650px;
+      margin: auto auto 25px;
+    }
+
+    .cta-btn {
+      display: inline-block;
+      background: white;
+      color: var(--blue);
+      padding: 13px 28px;
+      border-radius: 9px;
+      font-weight: 700;
+    }
+
+    /* FOOTER */
+
+    footer {
+      background: #0c1d35;
+      color: white;
+      padding: 55px 5% 25px;
+    }
+
+    .footer-grid {
+      max-width: 1200px;
+      margin: auto;
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 50px;
+    }
+
+    .footer-brand p {
+      color: #a9b7c9;
+      margin-top: 15px;
+      max-width: 350px;
+      font-size: 14px;
+    }
+
+    footer h4 {
+      margin-bottom: 18px;
+      font-size: 15px;
+    }
+
+    footer a {
+      display: block;
+      color: #a9b7c9;
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+
+    footer a:hover {
+      color: white;
+    }
+
+    .copyright {
+      max-width: 1200px;
+      margin: 40px auto 0;
+      padding-top: 20px;
+      border-top: 1px solid #26374e;
+      color: #8292a7;
+      font-size: 12px;
+      text-align: center;
+    }
+
+    /* MOBILE */
+
+    @media (max-width: 1000px) {
+      .nav-links {
+        gap: 14px;
+      }
+
+      .nav-actions {
+        display: none;
+      }
+
+      .hero-visual {
+        opacity: 0.3;
+        width: 70%;
+      }
+
+      .treatment-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .why-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .why-card {
+        border-right: none;
+      }
+
+      .stats {
+        margin-left: 5%;
+        margin-right: 5%;
+      }
+    }
+
+    @media (max-width: 700px) {
+      .navbar {
+        height: 70px;
+      }
+
+      .nav-links {
+        display: none;
+      }
+
+      .hero {
+        padding-top: 50px;
+        min-height: auto;
+        padding-bottom: 80px;
+      }
+
+      .hero h1 {
+        font-size: 42px;
+      }
+
+      .hero-description {
+        font-size: 15px;
+      }
+
+      .search-box {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 5px;
+      }
+
+      .search-field,
+      .city-select,
+      .category-select {
+        border: 1px solid #e5eaf0;
+        border-radius: 8px;
+        width: 100%;
+      }
+
+      .search-btn {
+        width: 100%;
+      }
+
+      .hero-visual {
+        width: 100%;
+        opacity: 0.12;
+      }
+
+      .stats {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+        margin-top: -35px;
+      }
+
+      .stat {
+        border-right: none;
+        justify-content: flex-start;
+      }
+
+      .section {
+        padding: 55px 5%;
+      }
+
+      .section-heading {
+        align-items: flex-start;
+        gap: 10px;
+      }
+
+      .treatment-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .why-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .steps {
+        grid-template-columns: 1fr;
+        gap: 30px;
+      }
+
+      .cta {
+        margin-left: 5%;
+        margin-right: 5%;
+      }
+
+      .cta h2 {
+        font-size: 27px;
+      }
+
+      .footer-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+      }
+    }
+
+    @media (max-width: 450px) {
+      .stats {
+        grid-template-columns: 1fr;
+      }
+
+      .footer-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .logo-name {
+        font-size: 18px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- NAVBAR -->
+  <header class="navbar">
+    <a href="#" class="logo">
+      <div class="logo-icon">+</div>
+      <div>
+        <div class="logo-name">MediIndia Care</div>
+        <div class="logo-tagline">Your Health, Our Priority</div>
+      </div>
+    </a>
+
+    <nav class="nav-links">
+      <a href="#">Home</a>
+      <a href="#treatments">Treatments</a>
+      <a href="#hospitals">Hospitals</a>
+      <a href="#doctors">Doctors</a>
+      <a href="#about">About India</a>
+      <a href="#how-it-works">How It Works</a>
+      <a href="#contact">Contact</a>
+    </nav>
+
+    <div class="nav-actions">
+      <button class="login-btn">Login</button>
+      <button class="signup-btn">Sign Up</button>
+    </div>
+  </header>
+
+
+  <!-- HERO -->
+  <section class="hero">
+
+    <div class="hero-content">
+
+      <div class="trust-badge">
+        Trusted Healthcare · World-Class Treatment
+      </div>
+
+      <h1>
+        Your Journey to Better
+        <span>Health</span> Starts in India
+      </h1>
+
+      <p class="hero-description">
+        Find world-class hospitals, expert doctors and affordable treatments
+        in India. We make your medical journey simple, transparent and secure.
+      </p>
+
+      <div class="search-box">
+        <input
+          class="search-field"
+          type="text"
+          placeholder="Search treatments, hospitals, doctors..."
+        >
+
+        <select class="city-select">
+          <option>Select City</option>
+          <option>Delhi</option>
+          <option>Mumbai</option>
+          <option>Ahmedabad</option>
+          <option>Bengaluru</option>
+          <option>Chennai</option>
+          <option>Hyderabad</option>
+        </select>
+
+        <select class="category-select">
+          <option>All Categories</option>
+          <option>Cardiology</option>
+          <option>Cosmetic Surgery</option>
+          <option>Dental</option>
+          <option>Fertility</option>
+          <option>Orthopaedics</option>
+        </select>
+
+        <button class="search-btn" onclick="searchAlert()">
+          Search
+        </button>
+      </div>
+
+    </div>
+
+    <div class="hero-visual">
+      <div class="taj"></div>
+    </div>
+
+  </section>
+
+
+  <!-- STATS -->
+  <section class="stats">
+
+    <div class="stat">
+      <div class="stat-icon">+</div>
+      <div>
+        <strong>500+</strong>
+        <span>Hospitals & Clinics</span>
+      </div>
+    </div>
+
+    <div class="stat">
+      <div class="stat-icon">D</div>
+      <div>
+        <strong>2000+</strong>
+        <span>Expert Doctors</span>
+      </div>
+    </div>
+
+    <div class="stat">
+      <div class="stat-icon">P</div>
+      <div>
+        <strong>50K+</strong>
+        <span>Patients</span>
+      </div>
+    </div>
+
+    <div class="stat">
+      <div class="stat-icon">S</div>
+      <div>
+        <strong>20+</strong>
+        <span>Specialties</span>
+      </div>
+    </div>
+
+  </section>
+
+
+  <!-- WHY INDIA -->
+  <section class="section why-section" id="about">
+
+    <h2 class="section-title">Why Choose India for Treatment?</h2>
+
+    <div class="why-grid">
+
+      <div class="why-card">
+        <div class="why-icon">1</div>
+        <h3>World-Class Care</h3>
+        <p>
+          International standards with modern medical technology
+          and experienced professionals.
+        </p>
+      </div>
+
+      <div class="why-card">
+        <div class="why-icon">$</div>
+        <h3>Affordable Treatment</h3>
+        <p>
+          High-quality healthcare at a fraction of the cost
+          compared with many countries.
+        </p>
+      </div>
+
+      <div class="why-card">
+        <div class="why-icon">T</div>
+        <h3>Medical Tourism</h3>
+        <p>
+          Combine quality healthcare with India's diverse
+          travel and cultural experiences.
+        </p>
+      </div>
+
+      <div class="why-card">
+        <div class="why-icon">S</div>
+        <h3>Safe & Secure</h3>
+        <p>
+          Discover accredited providers and qualified
+          healthcare professionals.
+        </p>
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- TREATMENTS -->
+  <section class="section treatments-section" id="treatments">
+
+    <div class="section-heading">
+      <h2>Popular Treatments</h2>
+      <a href="#" class="view-all">View All Treatments →</a>
+    </div>
+
+    <div class="treatment-grid">
+
+      <div class="treatment-card">
+        <div class="treatment-image cardiac">HEART</div>
+        <h3>Cardiac Surgery</h3>
+        <p>Heart bypass, valve replacement, angioplasty and more.</p>
+        <div class="price">Starting from $4,500</div>
+      </div>
+
+      <div class="treatment-card">
+        <div class="treatment-image cosmetic">CARE</div>
+        <h3>Cosmetic Surgery</h3>
+        <p>Rhinoplasty, facelift, liposuction and other procedures.</p>
+        <div class="price">Starting from $1,800</div>
+      </div>
+
+      <div class="treatment-card">
+        <div class="treatment-image dental">DENTAL</div>
+        <h3>Dental Treatment</h3>
+        <p>Implants, veneers, root canal and comprehensive dental care.</p>
+        <div class="price">Starting from $200</div>
+      </div>
+
+      <div class="treatment-card">
+        <div class="treatment-image fertility">FAMILY</div>
+        <h3>Fertility Treatment</h3>
+        <p>IVF, IUI, egg freezing and fertility-related services.</p>
+        <div class="price">Starting from $2,500</div>
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- HOW IT WORKS -->
+  <section class="section" id="how-it-works">
+
+    <h2 class="section-title">How It Works</h2>
+
+    <div class="steps">
+
+      <div class="step">
+        <div class="step-number">01</div>
+        <h3>Discover</h3>
+        <p>Search hospitals, doctors and treatments that match your needs.</p>
+      </div>
+
+      <div class="step">
+        <div class="step-number">02</div>
+        <h3>Compare</h3>
+        <p>Compare providers, treatments, locations and estimated costs.</p>
+      </div>
+
+      <div class="step">
+        <div class="step-number">03</div>
+        <h3>Consult</h3>
+        <p>Choose a provider and submit a consultation or appointment request.</p>
+      </div>
+
+      <div class="step">
+        <div class="step-number">04</div>
+        <h3>Travel & Treat</h3>
+        <p>Plan your medical journey and receive treatment in India.</p>
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- CTA -->
+  <section class="cta" id="contact">
+
+    <h2>Ready to Begin Your Healthcare Journey?</h2>
+
+    <p>
+      Explore trusted healthcare providers and find the right treatment
+      for your medical journey in India.
+    </p>
+
+    <a href="#treatments" class="cta-btn">
+      Explore Treatments
+    </a>
+
+  </section>
+
+
+  <!-- FOOTER -->
+  <footer>
+
+    <div class="footer-grid">
+
+      <div class="footer-brand">
+        <div class="logo-name">MediIndia Care</div>
+        <p>
+          Your trusted digital platform for discovering healthcare
+          providers and treatments in India.
+        </p>
+      </div>
+
+      <div>
+        <h4>Platform</h4>
+        <a href="#treatments">Treatments</a>
+        <a href="#hospitals">Hospitals</a>
+        <a href="#doctors">Doctors</a>
+        <a href="#how-it-works">How It Works</a>
+      </div>
+
+      <div>
+        <h4>Company</h4>
+        <a href="#about">About India</a>
+        <a href="#">About Us</a>
+        <a href="#">Contact</a>
+        <a href="#">Privacy Policy</a>
+      </div>
+
+      <div>
+        <h4>For Patients</h4>
+        <a href="#">Find Treatment</a>
+        <a href="#">Find Hospital</a>
+        <a href="#">Request Consultation</a>
+        <a href="#">Help Centre</a>
+      </div>
+
+    </div>
+
+    <div class="copyright">
+      © 2026 MediIndia Care. Built for Smart India Hackathon 2026.
+    </div>
+
+  </footer>
+
+
+  <script>
+    function searchAlert() {
+      const search = document.querySelector(".search-field").value.trim();
+
+      if (!search) {
+        alert("Please enter a treatment, hospital or doctor to search.");
+        return;
+      }
+
+      alert(
+        "Search functionality will be connected to our healthcare database in the next stage."
+      );
+    }
+  </script>
+
+</body>
+</html>
