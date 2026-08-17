@@ -6,7 +6,7 @@
 | **Bhavesh Bansal**  | Team Leader & Integration      | Project coordination, system integration, GitHub management, testing and overall implementation. |
 | **Deepika**         | Frontend Developer             | Patient-facing interface, landing page, responsive UI and reusable frontend components.          |
 | **Ayush Singh**     | Appointment & Patient Workflow | Treatment/provider workflow, consultation request and appointment functionality.                 |
-| **Armandeep Singh** | Backend & Supabase             | Database design, Supabase integration, backend logic and data management.                        |
+| **Armandeep Singh** | Backend Developer              | Database design, Supabase integration, backend logic and data management.                        |
 | **Devansh Grover**  | AI Recommendation              | AI-assisted treatment and healthcare-provider discovery and recommendation system.               |
 | **Ekansh Jindal**   | Admin Dashboard & Testing      | Administrative dashboard, provider/treatment management, testing and error handling.             |
 
