@@ -15,7 +15,7 @@
     :root {
       --blue: #1769d2;
       --dark-blue: #0d2342;
-      --green: #18a77a;
+      --green: #90EE90;
       --light-blue: #f3f8ff;
       --text: #18263b;
       --muted: #687589;
@@ -259,38 +259,13 @@
       overflow: hidden;
     }
 
-    .taj {
+    .taj-image {
       width: 100%;
       height: 100%;
-      background:
-        linear-gradient(135deg, rgba(24,105,210,0.12), rgba(24,167,122,0.05)),
-        radial-gradient(circle at 50% 48%, #fff 0 8%, #e8eef5 8.5% 9%, transparent 9.5%),
-        linear-gradient(to bottom, #bde3ff 0%, #eaf7ff 48%, #d4ecdf 49%, #b9d7bd 100%);
-      position: relative;
-    }
-
-    .taj::before {
-      content: "TAJ MAHAL";
-      position: absolute;
-      top: 45%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: clamp(24px, 4vw, 55px);
-      font-weight: 800;
-      letter-spacing: 5px;
-      color: rgba(255,255,255,0.95);
-      text-shadow: 0 3px 20px rgba(0,0,0,0.18);
-    }
-
-    .taj::after {
-      content: "";
-      position: absolute;
-      bottom: 0;
-      left: 15%;
-      width: 70%;
-      height: 25%;
-      background: linear-gradient(to bottom, rgba(255,255,255,0.7), rgba(115,166,125,0.3));
-      clip-path: polygon(40% 0, 60% 0, 100% 100%, 0 100%);
+      object-fit: cover;
+      object-position: center;
+      display: block;
+      filter: saturate(0.95);
     }
 
     /* STATS */
@@ -849,7 +824,11 @@
     </div>
 
     <div class="hero-visual">
-      <div class="taj"></div>
+      <img
+        class="taj-image"
+        src="images/taj-mahal.jpg"
+        alt="Taj Mahal in Agra, India"
+      >
     </div>
 
   </section>
