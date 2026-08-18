@@ -1,35 +1,59 @@
-const hospitals = [
-  {
-    name: "Apollo Hospitals",
-    city: "New Delhi",
-    speciality: "Multi-Specialty",
-    description:
-      "Advanced healthcare services with experienced specialists and modern medical facilities.",
-  },
-  {
-    name: "Fortis Hospital",
-    city: "Mumbai",
-    speciality: "Cardiology & Oncology",
-    description:
-      "Comprehensive treatment with specialist doctors and advanced diagnostic facilities.",
-  },
-  {
-    name: "Medanta - The Medicity",
-    city: "Gurugram",
-    speciality: "Multi-Specialty",
-    description:
-      "Leading medical centre offering advanced treatments across multiple specialties.",
-  },
-  {
-    name: "Artemis Hospital",
-    city: "Gurugram",
-    speciality: "Multi-Specialty",
-    description:
-      "Modern hospital providing international-standard healthcare services.",
-  },
-];
+"use client";
+
+import { useEffect, useState } from "react";
+
+type Hospital = {
+  id: number;
+  name: string;
+  city: string;
+  specialty: string;
+  address?: string;
+  image?: string;
+};
 
 export default function HospitalsPage() {
+  const [hospitals, setHospitals] = useState<Hospital[]>([]);
+  const [search, setSearch] = useState("");
+  const [city, setCity] = useState("All Cities");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchHospitals = async () => {
+      try {
+        const response = await fetch("http://localhost:5000/api/hospitals");
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch hospitals");
+        }
+
+        const data = await response.json();
+        setHospitals(data);
+      } catch (error) {
+        console.error("Error fetching hospitals:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchHospitals();
+  }, []);
+
+  const cities = [
+    "All Cities",
+    ...Array.from(new Set(hospitals.map((hospital) => hospital.city))),
+  ];
+
+  const filteredHospitals = hospitals.filter((hospital) => {
+    const matchesSearch =
+      hospital.name.toLowerCase().includes(search.toLowerCase()) ||
+      hospital.specialty.toLowerCase().includes(search.toLowerCase());
+
+    const matchesCity =
+      city === "All Cities" || hospital.city === city;
+
+    return matchesSearch && matchesCity;
+  });
+
   return (
     <main className="min-h-screen bg-slate-50">
 
@@ -44,7 +68,6 @@ export default function HospitalsPage() {
         </p>
       </section>
 
-
       <section className="px-10 py-12">
 
         <div className="flex gap-4 mb-10">
@@ -52,59 +75,75 @@ export default function HospitalsPage() {
           <input
             type="text"
             placeholder="Search hospitals..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
             className="flex-1 border rounded-lg px-5 py-3 bg-white"
           />
 
-          <select className="border rounded-lg px-5 py-3 bg-white">
-            <option>All Cities</option>
-            <option>New Delhi</option>
-            <option>Mumbai</option>
-            <option>Gurugram</option>
+          <select
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+            className="border rounded-lg px-5 py-3 bg-white"
+          >
+            {cities.map((cityName) => (
+              <option key={cityName} value={cityName}>
+                {cityName}
+              </option>
+            ))}
           </select>
 
         </div>
 
+        {loading ? (
+          <p className="text-gray-600">
+            Loading hospitals...
+          </p>
+        ) : filteredHospitals.length === 0 ? (
+          <p className="text-gray-600">
+            No hospitals found.
+          </p>
+        ) : (
+          <div className="grid md:grid-cols-2 gap-6">
 
-        <div className="grid md:grid-cols-2 gap-6">
+            {filteredHospitals.map((hospital) => (
+              <div
+                key={hospital.id}
+                className="bg-white border rounded-2xl p-6 shadow-sm"
+              >
 
-          {hospitals.map((hospital) => (
-            <div
-              key={hospital.name}
-              className="bg-white border rounded-2xl p-6 shadow-sm"
-            >
+                <div className="flex justify-between">
 
-              <div className="flex justify-between">
+                  <div>
+                    <h2 className="text-2xl font-bold text-slate-900">
+                      {hospital.name}
+                    </h2>
 
-                <div>
-                  <h2 className="text-2xl font-bold text-slate-900">
-                    {hospital.name}
-                  </h2>
+                    <p className="text-blue-600 mt-1">
+                      {hospital.specialty}
+                    </p>
+                  </div>
 
-                  <p className="text-blue-600 mt-1">
-                    {hospital.speciality}
-                  </p>
+                  <span className="text-gray-500">
+                    {hospital.city}
+                  </span>
+
                 </div>
 
-                <span className="text-gray-500">
-                  {hospital.city}
-                </span>
+                {hospital.address && (
+                  <p className="text-gray-500 mt-3">
+                    {hospital.address}
+                  </p>
+                )}
+
+                <button className="mt-6 bg-blue-600 text-white px-5 py-3 rounded-lg">
+                  View Hospital
+                </button>
 
               </div>
+            ))}
 
-
-              <p className="text-gray-600 mt-5">
-                {hospital.description}
-              </p>
-
-
-              <button className="mt-6 bg-blue-600 text-white px-5 py-3 rounded-lg">
-                View Hospital
-              </button>
-
-            </div>
-          ))}
-
-        </div>
+          </div>
+        )}
 
       </section>
 
