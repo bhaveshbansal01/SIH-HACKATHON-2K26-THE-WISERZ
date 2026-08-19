@@ -432,18 +432,23 @@ export default function AppointmentPage() {
         <div className="mb-10 text-center">
 
           <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-purple-200 bg-purple-50 px-4 py-2">
+
             <span className="h-2 w-2 rounded-full bg-purple-600"></span>
 
             <span className="text-sm font-semibold text-purple-700">
               Trusted Healthcare • World-Class Treatment
             </span>
+
           </div>
 
           <h1 className="text-4xl font-bold tracking-tight text-slate-900 md:text-5xl">
+
             Book Your{" "}
+
             <span className="text-purple-700">
               Consultation
             </span>
+
           </h1>
 
           <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-slate-600">
@@ -683,6 +688,7 @@ export default function AppointmentPage() {
             </button>
 
           </form>
+
         </div>
 
         {/* Trust Features */}
@@ -690,6 +696,7 @@ export default function AppointmentPage() {
 
           {/* Hospitals */}
           <div className="rounded-2xl border border-purple-100 bg-purple-50/50 p-5 text-center">
+
             <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-[#DFC5FE] font-bold text-purple-700">
               +
             </div>
@@ -701,10 +708,12 @@ export default function AppointmentPage() {
             <p className="mt-1 text-sm text-slate-600">
               Find trusted healthcare providers across India.
             </p>
+
           </div>
 
           {/* Doctors */}
           <div className="rounded-2xl border border-purple-100 bg-purple-50/50 p-5 text-center">
+
             <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-[#DFC5FE] font-bold text-purple-700">
               +
             </div>
@@ -716,10 +725,12 @@ export default function AppointmentPage() {
             <p className="mt-1 text-sm text-slate-600">
               Connect with experienced medical professionals.
             </p>
+
           </div>
 
           {/* Secure */}
           <div className="rounded-2xl border border-purple-100 bg-purple-50/50 p-5 text-center">
+
             <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-[#DFC5FE] font-bold text-purple-700">
               +
             </div>
@@ -731,6 +742,7 @@ export default function AppointmentPage() {
             <p className="mt-1 text-sm text-slate-600">
               Submit your consultation request safely and easily.
             </p>
+
           </div>
 
         </div>
@@ -738,4 +750,4 @@ export default function AppointmentPage() {
       </div>
     </main>
   );
-}
+} 
