@@ -490,3 +490,9 @@ app.delete("/api/treatments/:id", async (req, res) => {
     });
   }
 });
+// START SERVER
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, () => {
+  console.log(`MediIndia Care backend running on http://localhost:${PORT}`);
+});
