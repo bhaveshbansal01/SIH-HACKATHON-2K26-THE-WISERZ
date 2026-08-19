@@ -3,31 +3,31 @@ const treatments = [
     title: "Cardiac Surgery",
     description: "Heart Bypass, Valve Replacement, Angioplasty & more",
     price: "Starting from $4,500",
-    image: "/images/cardiac-surgery.jpg",
+    image: "/images/treatments/cardiac.jpg",
   },
   {
     title: "Cosmetic Surgery",
     description: "Rhinoplasty, Facelift, Liposuction & more",
     price: "Starting from $1,800",
-    image: "/images/cosmetic-surgery.jpg",
+    image: "/images/treatments/cosmetic.jpg",
   },
   {
     title: "Dental Treatment",
     description: "Implants, Veneers, Root Canal & more",
     price: "Starting from $200",
-    image: "/images/dental-treatment.jpg",
+    image: "/images/treatments/Dental .jpg",
   },
   {
     title: "Fertility Treatment",
     description: "IVF, IUI, Egg Freezing & more",
     price: "Starting from $2,500",
-    image: "/images/fertility-treatment.jpg",
+    image: "/images/treatments/fertility.jpg",
   },
   {
     title: "Orthopedic Surgery",
     description: "Knee Replacement, Hip Replacement & more",
     price: "Starting from $3,500",
-    image: "/images/orthopedic-surgery.jpg",
+    image: "/images/treatments/Orthopedic .jpg",
   },
 ];
 

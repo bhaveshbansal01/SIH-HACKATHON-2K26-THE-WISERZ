@@ -2,41 +2,49 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 export default function Navbar() {
   const [languageOpen, setLanguageOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-
-  const navLinks = [
-    { name: "Home", href: "/" },
-    { name: "Treatments", href: "/treatments" },
-    { name: "Hospitals", href: "/hospitals" },
-    { name: "Doctors", href: "/doctors" },
-    { name: "About India", href: "/about-india" },
-    { name: "How It Works", href: "/how-it-works" },
-    { name: "Contact", href: "/contact" },
-  ];
+const navLinks = [
+  { name: "Home", href: "/#home" },
+  { name: "Treatments", href: "/#treatments" },
+  { name: "Hospitals", href: "/hospitals" },
+  { name: "Doctors", href: "/doctors" },
+  { name: "About India", href: "/#about-india" },
+  { name: "How It Works", href: "/#how-it-works" },
+  { name: "Contact", href: "/#contact" },
+];
 
   return (
     <nav className="w-full bg-white border-b border-gray-200">
       <div className="w-full px-4 sm:px-6 lg:px-12 h-[72px] flex items-center justify-between">
 
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 shrink-0">
-          <div className="flex items-center justify-center w-10 h-10 rounded-full border-2 border-[#DFC5FE] text-[#DFC5FE] text-xl font-bold">
-            +
-          </div>
+      {/* Logo */}
+<Link href="/" className="flex items-center gap-2 shrink-0">
 
-          <div className="leading-tight">
-            <h1 className="text-[17px] font-bold text-[#2563A6]">
-              MediIndia Care
-            </h1>
+  <div className="flex items-center justify-center w-10 h-10 rounded-full border-2 border-[#DFC5FE] overflow-hidden bg-white">
+    <Image
+      src="/images/logo.jpg"
+      alt="MediIndia Care Logo"
+      width={40}
+      height={40}
+      className="h-full w-full object-contain"
+    />
+  </div>
 
-            <p className="text-[9px] text-gray-400 tracking-wide">
-              Your Health, Our Priority
-            </p>
-          </div>
-        </Link>
+  <div className="leading-tight">
+    <h1 className="text-[17px] font-bold text-[#2563A6]">
+      MediIndia Care
+    </h1>
+
+    <p className="text-[9px] text-gray-400 tracking-wide">
+      Your Health, Our Priority
+    </p>
+  </div>
+
+</Link>
 
         {/* Desktop Navigation */}
         <div className="hidden lg:flex items-center gap-2 text-[12px] font-semibold text-gray-700">

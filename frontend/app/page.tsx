@@ -223,14 +223,17 @@ export default function Home() {
     searchResults.treatments.length;
 
   return (
-    <main className="bg-white">
+    <main className="bg-white scroll-smooth">
       <Navbar />
 
       {/* ==========================================
           HERO + STATS
       ========================================== */}
 
-      <section className="relative overflow-hidden bg-white">
+      <section
+  id="home"
+  className="relative scroll-mt-24 overflow-hidden bg-white"
+>
 
         {/* Taj Mahal Background */}
 
@@ -727,15 +730,30 @@ export default function Home() {
           OTHER SECTIONS
       ========================================== */}
 
-      <WhyChooseIndia />
+   {/* ABOUT INDIA */}
+<section id="about-india" className="scroll-mt-24">
+  <WhyChooseIndia />
+</section>
 
-      <PopularTreatments />
+{/* POPULAR TREATMENTS */}
+<section id="treatments" className="scroll-mt-24">
+  <PopularTreatments />
+</section>
 
-      <HowItWorks />
+{/* HOW IT WORKS */}
+<section id="how-it-works" className="scroll-mt-24">
+  <HowItWorks />
+</section>
 
-      <CTASection />
+{/* CONTACT / CTA */}
+<section id="contact" className="scroll-mt-24">
+  <CTASection />
+</section>
 
-      <AIRecommendationWidget />
+{/* AI RECOMMENDATION */}
+<AIRecommendationWidget />
+
+    
 
     </main>
   );
