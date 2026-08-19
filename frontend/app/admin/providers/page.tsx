@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type ProviderStatus = "Active" | "Inactive";
 
@@ -13,40 +13,7 @@ type Provider = {
   status: ProviderStatus;
 };
 
-const initialProviders: Provider[] = [
-  {
-    id: 1,
-    name: "Dr. Rajesh Kumar",
-    specialty: "Cardiology",
-    hospital: "MedIndia Hospital",
-    location: "New Delhi",
-    status: "Active",
-  },
-  {
-    id: 2,
-    name: "Dr. Priya Sharma",
-    specialty: "Neurology",
-    hospital: "Apollo Healthcare",
-    location: "Mumbai",
-    status: "Active",
-  },
-  {
-    id: 3,
-    name: "Dr. Amit Singh",
-    specialty: "Orthopedics",
-    hospital: "Fortis Hospital",
-    location: "Chandigarh",
-    status: "Active",
-  },
-  {
-    id: 4,
-    name: "Dr. Neha Gupta",
-    specialty: "Dermatology",
-    hospital: "Max Healthcare",
-    location: "Delhi",
-    status: "Inactive",
-  },
-];
+const API_URL = "http://localhost:5000";
 
 const emptyForm = {
   name: "",
@@ -57,27 +24,53 @@ const emptyForm = {
 };
 
 export default function ProvidersPage() {
-  const [providers, setProviders] =
-    useState<Provider[]>(initialProviders);
-
+  const [providers, setProviders] = useState<Provider[]>([]);
   const [search, setSearch] = useState("");
 
   const [showForm, setShowForm] = useState(false);
-
-  const [editingId, setEditingId] =
-    useState<number | null>(null);
-
-  const [error, setError] = useState("");
-
-  const [success, setSuccess] = useState("");
-
-  const [isSaving, setIsSaving] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
 
   const [form, setForm] = useState(emptyForm);
 
-  // -----------------------------
-  // SEARCH / FILTER
-  // -----------------------------
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // ==========================================
+  // LOAD DOCTORS FROM SUPABASE
+  // ==========================================
+
+  const loadProviders = async () => {
+    try {
+      setIsLoading(true);
+      setError("");
+
+      const response = await fetch(`${API_URL}/api/doctors`);
+
+      if (!response.ok) {
+        throw new Error("Failed to load doctors");
+      }
+
+      const data = await response.json();
+
+      setProviders(data);
+    } catch (error) {
+      console.error("Failed to load providers:", error);
+      setError("Unable to load providers from server.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // LOAD WHEN PAGE OPENS
+  useEffect(() => {
+    loadProviders();
+  }, []);
+
+  // ==========================================
+  // SEARCH
+  // ==========================================
 
   const filteredProviders = useMemo(() => {
     const searchText = search.trim().toLowerCase();
@@ -97,20 +90,9 @@ export default function ProvidersPage() {
     });
   }, [providers, search]);
 
-  // -----------------------------
-  // RESET FORM
-  // -----------------------------
-
-  const resetForm = () => {
-    setForm(emptyForm);
-    setEditingId(null);
-    setShowForm(false);
-    setError("");
-  };
-
-  // -----------------------------
-  // SHOW MESSAGE
-  // -----------------------------
+  // ==========================================
+  // SUCCESS MESSAGE
+  // ==========================================
 
   const showSuccessMessage = (message: string) => {
     setSuccess(message);
@@ -120,9 +102,20 @@ export default function ProvidersPage() {
     }, 3000);
   };
 
-  // -----------------------------
+  // ==========================================
+  // RESET FORM
+  // ==========================================
+
+  const resetForm = () => {
+    setForm(emptyForm);
+    setEditingId(null);
+    setShowForm(false);
+    setError("");
+  };
+
+  // ==========================================
   // VALIDATION
-  // -----------------------------
+  // ==========================================
 
   const validateForm = () => {
     if (
@@ -134,14 +127,12 @@ export default function ProvidersPage() {
       return "Please fill in all required fields.";
     }
 
-    // Name validation
     if (!/^[a-zA-Z.\s]+$/.test(form.name.trim())) {
-      return "Provider name can contain only letters, spaces and dots.";
+      return "Doctor name can contain only letters, spaces and dots.";
     }
 
-    // Minimum length
     if (form.name.trim().length < 4) {
-      return "Provider name is too short.";
+      return "Doctor name is too short.";
     }
 
     if (form.specialty.trim().length < 3) {
@@ -156,7 +147,6 @@ export default function ProvidersPage() {
       return "Please enter a valid location.";
     }
 
-    // Duplicate checking
     const duplicate = providers.some((provider) => {
       if (provider.id === editingId) {
         return false;
@@ -169,15 +159,15 @@ export default function ProvidersPage() {
     });
 
     if (duplicate) {
-      return "A provider with this name already exists.";
+      return "A doctor with this name already exists.";
     }
 
     return "";
   };
 
-  // -----------------------------
-  // ADD / EDIT PROVIDER
-  // -----------------------------
+  // ==========================================
+  // ADD / EDIT DOCTOR
+  // ==========================================
 
   const handleSubmit = async (
     e: React.FormEvent<HTMLFormElement>
@@ -196,68 +186,107 @@ export default function ProvidersPage() {
 
     setIsSaving(true);
 
-    // Small delay to simulate save operation
-    await new Promise((resolve) =>
-      setTimeout(resolve, 400)
-    );
-
     try {
+      const doctorData = {
+        name: form.name.trim(),
+        specialty: form.specialty.trim(),
+        hospital: form.hospital.trim(),
+        location: form.location.trim(),
+        status: form.status,
+      };
+
+      // ======================================
+      // EDIT DOCTOR
+      // ======================================
+
       if (editingId !== null) {
-        // EDIT PROVIDER
+        const response = await fetch(
+          `${API_URL}/api/doctors/${editingId}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(doctorData),
+          }
+        );
+
+        if (!response.ok) {
+          const result = await response.json().catch(() => null);
+
+          throw new Error(
+            result?.error || "Failed to update doctor"
+          );
+        }
+
+        const updatedDoctor = await response.json();
 
         setProviders((currentProviders) =>
           currentProviders.map((provider) =>
             provider.id === editingId
-              ? {
-                  ...provider,
-                  name: form.name.trim(),
-                  specialty: form.specialty.trim(),
-                  hospital: form.hospital.trim(),
-                  location: form.location.trim(),
-                  status: form.status,
-                }
+              ? updatedDoctor
               : provider
           )
         );
 
         showSuccessMessage(
-          "Provider updated successfully."
+          "Doctor updated successfully."
         );
-      } else {
-        // ADD PROVIDER
+      }
 
-        const newProvider: Provider = {
-          id: Date.now(),
-          name: form.name.trim(),
-          specialty: form.specialty.trim(),
-          hospital: form.hospital.trim(),
-          location: form.location.trim(),
-          status: form.status,
-        };
+      // ======================================
+      // ADD DOCTOR
+      // ======================================
+
+      else {
+        const response = await fetch(
+          `${API_URL}/api/doctors`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(doctorData),
+          }
+        );
+
+        if (!response.ok) {
+          const result = await response.json().catch(() => null);
+
+          throw new Error(
+            result?.error || "Failed to add doctor"
+          );
+        }
+
+        const newDoctor = await response.json();
 
         setProviders((currentProviders) => [
           ...currentProviders,
-          newProvider,
+          newDoctor,
         ]);
 
         showSuccessMessage(
-          "Provider added successfully."
+          "Doctor added successfully."
         );
       }
 
       resetForm();
-    } catch {
+    } catch (error) {
+      console.error("Save doctor error:", error);
+
       setError(
-        "Something went wrong while saving the provider."
+        error instanceof Error
+          ? error.message
+          : "Something went wrong while saving doctor."
       );
     } finally {
       setIsSaving(false);
     }
   };
 
-  // -----------------------------
+  // ==========================================
   // EDIT
-  // -----------------------------
+  // ==========================================
 
   const handleEdit = (provider: Provider) => {
     setForm({
@@ -270,7 +299,6 @@ export default function ProvidersPage() {
 
     setEditingId(provider.id);
     setShowForm(true);
-
     setError("");
     setSuccess("");
 
@@ -280,17 +308,17 @@ export default function ProvidersPage() {
     });
   };
 
-  // -----------------------------
-  // DELETE
-  // -----------------------------
+  // ==========================================
+  // DELETE DOCTOR
+  // ==========================================
 
-  const handleDelete = (id: number) => {
+  const handleDelete = async (id: number) => {
     const provider = providers.find(
       (item) => item.id === id
     );
 
     if (!provider) {
-      setError("Provider not found.");
+      setError("Doctor not found.");
       return;
     }
 
@@ -303,6 +331,24 @@ export default function ProvidersPage() {
     }
 
     try {
+      setError("");
+
+      const response = await fetch(
+        `${API_URL}/api/providers/${id}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (!response.ok) {
+        const result = await response.json().catch(() => null);
+
+        throw new Error(
+          result?.error || "Failed to delete doctor"
+        );
+      }
+
+      // Remove from screen
       setProviders((currentProviders) =>
         currentProviders.filter(
           (item) => item.id !== id
@@ -312,38 +358,71 @@ export default function ProvidersPage() {
       showSuccessMessage(
         `${provider.name} deleted successfully.`
       );
-    } catch {
+    } catch (error) {
+      console.error("Delete doctor error:", error);
+
       setError(
-        "Unable to delete provider. Please try again."
+        error instanceof Error
+          ? error.message
+          : "Unable to delete doctor."
       );
     }
   };
 
-  // -----------------------------
+  // ==========================================
   // TOGGLE STATUS
-  // -----------------------------
+  // ==========================================
 
-  const toggleStatus = (id: number) => {
-    setProviders((currentProviders) =>
-      currentProviders.map((provider) =>
-        provider.id === id
-          ? {
-              ...provider,
-              status:
-                provider.status === "Active"
-                  ? "Inactive"
-                  : "Active",
-            }
-          : provider
-      )
-    );
+  const toggleStatus = async (provider: Provider) => {
+    const newStatus =
+      provider.status === "Active"
+        ? "Inactive"
+        : "Active";
 
-    showSuccessMessage("Provider status updated.");
+    try {
+      const response = await fetch(
+        `${API_URL}/api/doctors/${provider.id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: provider.name,
+            specialty: provider.specialty,
+            hospital: provider.hospital,
+            location: provider.location,
+            status: newStatus,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to update status");
+      }
+
+      const updatedDoctor = await response.json();
+
+      setProviders((currentProviders) =>
+        currentProviders.map((item) =>
+          item.id === provider.id
+            ? updatedDoctor
+            : item
+        )
+      );
+
+      showSuccessMessage(
+        "Doctor status updated."
+      );
+    } catch (error) {
+      console.error(error);
+      setError("Unable to update doctor status.");
+    }
   };
 
-  // -----------------------------
+  // ==========================================
   // OPEN ADD FORM
-  // -----------------------------
+  // ==========================================
 
   const openAddForm = () => {
     setForm(emptyForm);
@@ -353,8 +432,13 @@ export default function ProvidersPage() {
     setShowForm(true);
   };
 
+  // ==========================================
+  // UI
+  // ==========================================
+
   return (
     <div style={styles.page}>
+
       {/* HEADER */}
 
       <header style={styles.header}>
@@ -368,8 +452,7 @@ export default function ProvidersPage() {
           </h1>
 
           <p style={styles.subtitle}>
-            Manage healthcare providers registered in
-            MedIndia Care.
+            Manage doctors registered in MedIndia Care.
           </p>
         </div>
 
@@ -385,17 +468,15 @@ export default function ProvidersPage() {
 
       {success && (
         <div style={styles.successMessage}>
-          <span>✓</span>
-          {success}
+          ✓ {success}
         </div>
       )}
 
       {/* ERROR */}
 
-      {error && !showForm && (
+      {error && (
         <div style={styles.errorMessage}>
-          <span>⚠</span>
-          {error}
+          ⚠ {error}
 
           <button
             style={styles.dismissButton}
@@ -410,6 +491,7 @@ export default function ProvidersPage() {
 
       {showForm && (
         <div style={styles.formCard}>
+
           <div style={styles.formHeader}>
             <div>
               <h2 style={styles.formTitle}>
@@ -419,7 +501,7 @@ export default function ProvidersPage() {
               </h2>
 
               <p style={styles.formSubtitle}>
-                Enter provider information below.
+                Enter doctor information below.
               </p>
             </div>
 
@@ -432,22 +514,13 @@ export default function ProvidersPage() {
             </button>
           </div>
 
-          {/* FORM ERROR */}
-
-          {error && (
-            <div style={styles.errorMessage}>
-              <span>⚠</span>
-              {error}
-            </div>
-          )}
-
           <form onSubmit={handleSubmit}>
+
             <div style={styles.formGrid}>
-              {/* NAME */}
 
               <div>
                 <label style={styles.label}>
-                  Provider Name *
+                  Doctor Name *
                 </label>
 
                 <input
@@ -463,8 +536,6 @@ export default function ProvidersPage() {
                   }
                 />
               </div>
-
-              {/* SPECIALTY */}
 
               <div>
                 <label style={styles.label}>
@@ -485,8 +556,6 @@ export default function ProvidersPage() {
                 />
               </div>
 
-              {/* HOSPITAL */}
-
               <div>
                 <label style={styles.label}>
                   Hospital *
@@ -505,8 +574,6 @@ export default function ProvidersPage() {
                   }
                 />
               </div>
-
-              {/* LOCATION */}
 
               <div>
                 <label style={styles.label}>
@@ -527,38 +594,24 @@ export default function ProvidersPage() {
                 />
               </div>
 
-              {/* STATUS */}
-
               <div>
-                <label style={styles.label}>
-                  Status
-                </label>
+  <label style={styles.label}>
+    Status
+  </label>
 
-                <select
-                  style={styles.input}
-                  value={form.status}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      status:
-                        e.target.value as ProviderStatus,
-                    })
-                  }
-                >
-                  <option value="Active">
-                    Active
-                  </option>
+  <select
+    style={styles.input}
+    value="Active"
+    disabled
+  >
+    <option value="Active">Active</option>
+  </select>
+</div>
 
-                  <option value="Inactive">
-                    Inactive
-                  </option>
-                </select>
-              </div>
             </div>
 
-            {/* FORM ACTIONS */}
-
             <div style={styles.formActions}>
+
               <button
                 type="button"
                 style={styles.cancelButton}
@@ -570,10 +623,7 @@ export default function ProvidersPage() {
 
               <button
                 type="submit"
-                style={{
-                  ...styles.saveButton,
-                  opacity: isSaving ? 0.7 : 1,
-                }}
+                style={styles.saveButton}
                 disabled={isSaving}
               >
                 {isSaving
@@ -582,7 +632,9 @@ export default function ProvidersPage() {
                   ? "Update Provider"
                   : "Add Provider"}
               </button>
+
             </div>
+
           </form>
         </div>
       )}
@@ -590,17 +642,20 @@ export default function ProvidersPage() {
       {/* SEARCH */}
 
       <div style={styles.searchCard}>
+
         <div>
           <h2 style={styles.sectionTitle}>
             Providers
           </h2>
 
           <p style={styles.countText}>
-            {filteredProviders.length} provider
-            {filteredProviders.length !== 1
-              ? "s"
-              : ""}{" "}
-            found
+            {isLoading
+              ? "Loading..."
+              : `${filteredProviders.length} provider${
+                  filteredProviders.length !== 1
+                    ? "s"
+                    : ""
+                } found`}
           </p>
         </div>
 
@@ -613,13 +668,17 @@ export default function ProvidersPage() {
             setSearch(e.target.value)
           }
         />
+
       </div>
 
       {/* TABLE */}
 
       <div style={styles.tableCard}>
+
         <div style={styles.tableWrapper}>
+
           <table style={styles.table}>
+
             <thead>
               <tr>
                 <th style={styles.th}>
@@ -649,11 +708,24 @@ export default function ProvidersPage() {
             </thead>
 
             <tbody>
-              {filteredProviders.length > 0 ? (
+
+              {isLoading ? (
+
+                <tr>
+                  <td
+                    colSpan={6}
+                    style={styles.emptyState}
+                  >
+                    Loading doctors...
+                  </td>
+                </tr>
+
+              ) : filteredProviders.length > 0 ? (
+
                 filteredProviders.map(
                   (provider) => (
+
                     <tr key={provider.id}>
-                      {/* PROVIDER */}
 
                       <td style={styles.td}>
                         <div
@@ -679,53 +751,40 @@ export default function ProvidersPage() {
                         </div>
                       </td>
 
-                      {/* SPECIALTY */}
-
                       <td style={styles.td}>
                         {provider.specialty}
                       </td>
-
-                      {/* HOSPITAL */}
 
                       <td style={styles.td}>
                         {provider.hospital}
                       </td>
 
-                      {/* LOCATION */}
-
                       <td style={styles.td}>
                         {provider.location}
                       </td>
 
-                      {/* STATUS */}
-
                       <td style={styles.td}>
+
                         <button
                           onClick={() =>
-                            toggleStatus(
-                              provider.id
-                            )
+                            toggleStatus(provider)
                           }
-                          style={
-                            provider.status ===
-                            "Active"
-                              ? styles.activeStatus
-                              : styles.inactiveStatus
-                          }
-                          title="Click to change status"
+                         type="button"
+    style={styles.activeStatus}
                         >
                           {provider.status}
                         </button>
+
                       </td>
 
-                      {/* ACTIONS */}
-
                       <td style={styles.td}>
+
                         <div
                           style={
                             styles.actionButtons
                           }
                         >
+
                           <button
                             style={
                               styles.editButton
@@ -751,12 +810,18 @@ export default function ProvidersPage() {
                           >
                             Delete
                           </button>
+
                         </div>
+
                       </td>
+
                     </tr>
+
                   )
                 )
+
               ) : (
+
                 <tr>
                   <td
                     colSpan={6}
@@ -777,13 +842,18 @@ export default function ProvidersPage() {
                     </p>
                   </td>
                 </tr>
+
               )}
+
             </tbody>
+
           </table>
+
         </div>
+
       </div>
 
-      {/* BACK BUTTON */}
+      {/* BACK */}
 
       <button
         style={styles.backButton}
@@ -793,9 +863,11 @@ export default function ProvidersPage() {
       >
         ← Back to Dashboard
       </button>
+
     </div>
   );
 }
+
 
 // =====================================================
 // STYLES
@@ -805,6 +877,7 @@ const styles: Record<
   string,
   React.CSSProperties
 > = {
+
   page: {
     minHeight: "100vh",
     background: "#f5f7fb",
@@ -854,9 +927,6 @@ const styles: Record<
     padding: "13px 16px",
     borderRadius: "9px",
     marginBottom: "20px",
-    display: "flex",
-    alignItems: "center",
-    gap: "10px",
   },
 
   errorMessage: {
