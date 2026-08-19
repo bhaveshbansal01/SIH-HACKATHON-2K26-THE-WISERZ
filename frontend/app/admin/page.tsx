@@ -22,6 +22,9 @@ type StatsData = {
   hospitals: number;
 };
 
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
 export default function AdminDashboard() {
   const router = useRouter();
 
@@ -49,13 +52,13 @@ export default function AdminDashboard() {
 
   const goToProviders = () => {
     setActiveMenu("Providers");
-    router.push("/doctors");
+    router.push("/admin/providers");
   };
 
   const goToTreatments = () => {
-    setActiveMenu("Treatments");
-    router.push("/treatments");
-  };
+  setActiveMenu("Treatments");
+  router.push("/treatments");
+};
 
   const goToHospitals = () => {
     setActiveMenu("Hospitals");
@@ -65,6 +68,10 @@ export default function AdminDashboard() {
   const goToAppointments = () => {
     setActiveMenu("Appointments");
     router.push("/appointment");
+  };
+
+  const goToWebsite = () => {
+    router.push("/");
   };
 
   // =========================
@@ -83,10 +90,10 @@ export default function AdminDashboard() {
           appointmentsResponse,
           hospitalsResponse,
         ] = await Promise.all([
-          fetch("http://localhost:5000/api/doctors"),
-          fetch("http://localhost:5000/api/treatments"),
-          fetch("http://localhost:5000/api/appointments"),
-          fetch("http://localhost:5000/api/hospitals"),
+          fetch(`${API_URL}/api/doctors`),
+          fetch(`${API_URL}/api/treatments`),
+          fetch(`${API_URL}/api/appointments`),
+          fetch(`${API_URL}/api/hospitals`),
         ]);
 
         if (
@@ -95,7 +102,7 @@ export default function AdminDashboard() {
           !appointmentsResponse.ok ||
           !hospitalsResponse.ok
         ) {
-          throw new Error("Failed to load dashboard data");
+          throw new Error("Failed to load dashboard data.");
         }
 
         const doctors = await doctorsResponse.json();
@@ -105,17 +112,33 @@ export default function AdminDashboard() {
 
         const appointmentList = Array.isArray(appointmentData)
           ? appointmentData
-          : [appointmentData];
+          : appointmentData
+            ? [appointmentData]
+            : [];
 
         setStats({
-          providers: Array.isArray(doctors) ? doctors.length : 0,
-          treatments: Array.isArray(treatments) ? treatments.length : 0,
+          providers: Array.isArray(doctors)
+            ? doctors.length
+            : 0,
+
+          treatments: Array.isArray(treatments)
+            ? treatments.length
+            : 0,
+
           appointments: appointmentList.length,
-          hospitals: Array.isArray(hospitals) ? hospitals.length : 0,
+
+          hospitals: Array.isArray(hospitals)
+            ? hospitals.length
+            : 0,
         });
 
         setAppointments(appointmentList);
       } catch (err) {
+        console.error(
+          "Admin dashboard error:",
+          err
+        );
+
         setError(
           err instanceof Error
             ? err.message
@@ -129,30 +152,41 @@ export default function AdminDashboard() {
     fetchDashboardData();
   }, []);
 
+  // =========================
+  // STATS
+  // =========================
+
   const statCards = [
     {
       title: "Total Providers",
       value: stats.providers,
       icon: "👨‍⚕️",
       description: "Registered providers",
+      onClick: goToProviders,
     },
+
     {
       title: "Total Treatments",
       value: stats.treatments,
       icon: "💊",
       description: "Available treatments",
+      onClick: goToTreatments,
     },
+
     {
       title: "Appointments",
       value: stats.appointments,
       icon: "📅",
       description: "Total appointments",
+      onClick: goToAppointments,
     },
+
     {
       title: "Hospitals",
       value: stats.hospitals,
       icon: "🏥",
       description: "Registered hospitals",
+      onClick: goToHospitals,
     },
   ];
 
@@ -164,21 +198,34 @@ export default function AdminDashboard() {
       <aside style={styles.sidebar}>
 
         <div style={styles.logo}>
-          <div style={styles.logoIcon}>M</div>
+
+          <div style={styles.logoIcon}>
+            M
+          </div>
 
           <div>
-            <h2 style={styles.logoText}>MedIndia</h2>
-            <p style={styles.logoSubtext}>Admin Panel</p>
+
+            <h2 style={styles.logoText}>
+              MedIndia
+            </h2>
+
+            <p style={styles.logoSubtext}>
+              Admin Panel
+            </p>
+
           </div>
+
         </div>
 
         <nav style={styles.nav}>
 
           {/* Dashboard */}
+
           <button
             onClick={goToDashboard}
             style={{
               ...styles.navButton,
+
               ...(activeMenu === "Dashboard"
                 ? styles.activeNavButton
                 : {}),
@@ -189,10 +236,12 @@ export default function AdminDashboard() {
           </button>
 
           {/* Providers */}
+
           <button
             onClick={goToProviders}
             style={{
               ...styles.navButton,
+
               ...(activeMenu === "Providers"
                 ? styles.activeNavButton
                 : {}),
@@ -203,10 +252,12 @@ export default function AdminDashboard() {
           </button>
 
           {/* Treatments */}
+
           <button
             onClick={goToTreatments}
             style={{
               ...styles.navButton,
+
               ...(activeMenu === "Treatments"
                 ? styles.activeNavButton
                 : {}),
@@ -217,10 +268,12 @@ export default function AdminDashboard() {
           </button>
 
           {/* Hospitals */}
+
           <button
             onClick={goToHospitals}
             style={{
               ...styles.navButton,
+
               ...(activeMenu === "Hospitals"
                 ? styles.activeNavButton
                 : {}),
@@ -231,10 +284,12 @@ export default function AdminDashboard() {
           </button>
 
           {/* Appointments */}
+
           <button
             onClick={goToAppointments}
             style={{
               ...styles.navButton,
+
               ...(activeMenu === "Appointments"
                 ? styles.activeNavButton
                 : {}),
@@ -246,13 +301,17 @@ export default function AdminDashboard() {
 
         </nav>
 
+        {/* Back to Website */}
+
         <div style={styles.sidebarBottom}>
+
           <button
             style={styles.backButton}
-            onClick={() => router.push("/")}
+            onClick={goToWebsite}
           >
             ← Back to Website
           </button>
+
         </div>
 
       </aside>
@@ -261,11 +320,12 @@ export default function AdminDashboard() {
 
       <main style={styles.main}>
 
-        {/* Header */}
+        {/* HEADER */}
 
         <header style={styles.header}>
 
           <div>
+
             <p style={styles.smallText}>
               Welcome back, Admin
             </p>
@@ -273,6 +333,7 @@ export default function AdminDashboard() {
             <h1 style={styles.heading}>
               Admin Dashboard
             </h1>
+
           </div>
 
           <div style={styles.adminProfile}>
@@ -282,23 +343,46 @@ export default function AdminDashboard() {
             </div>
 
             <div>
-              <strong>Administrator</strong>
+
+              <strong>
+                Administrator
+              </strong>
 
               <p style={styles.profileRole}>
                 System Admin
               </p>
+
             </div>
 
           </div>
 
         </header>
 
-        {/* Error */}
+        {/* ERROR */}
 
         {error && (
+
           <div style={styles.errorBox}>
-            {error}
+
+            <strong>
+              Dashboard Error
+            </strong>
+
+            <p style={styles.errorText}>
+              {error}
+            </p>
+
+            <button
+              onClick={() =>
+                window.location.reload()
+              }
+              style={styles.retryButton}
+            >
+              Retry
+            </button>
+
           </div>
+
         )}
 
         {/* ================= STATS ================= */}
@@ -307,21 +391,24 @@ export default function AdminDashboard() {
 
           {statCards.map((stat) => (
 
-            <div
+            <button
               key={stat.title}
+              onClick={stat.onClick}
               style={styles.statCard}
             >
 
               <div style={styles.statTop}>
 
-                <div>
+                <div style={styles.statTextArea}>
 
                   <p style={styles.statTitle}>
                     {stat.title}
                   </p>
 
                   <h2 style={styles.statValue}>
-                    {loading ? "..." : stat.value}
+                    {loading
+                      ? "..."
+                      : stat.value}
                   </h2>
 
                 </div>
@@ -336,7 +423,7 @@ export default function AdminDashboard() {
                 {stat.description}
               </p>
 
-            </div>
+            </button>
 
           ))}
 
@@ -346,7 +433,7 @@ export default function AdminDashboard() {
 
         <section style={styles.contentGrid}>
 
-          {/* Quick Actions */}
+          {/* QUICK ACTIONS */}
 
           <div style={styles.card}>
 
@@ -379,13 +466,16 @@ export default function AdminDashboard() {
                   👨‍⚕️
                 </span>
 
-                <span>
+                <span style={styles.actionText}>
+
                   <strong>
-                    Manage Providers </strong>
+                    Manage Providers
+                  </strong>
 
                   <small>
                     View and manage providers
                   </small>
+
                 </span>
 
               </button>
@@ -401,13 +491,16 @@ export default function AdminDashboard() {
                   💊
                 </span>
 
-                <span>
+                <span style={styles.actionText}>
+
                   <strong>
-                    Manage Treatments </strong>
+                    Manage Treatments
+                  </strong>
 
                   <small>
-                    Add or update treatments
+                    View available treatments
                   </small>
+
                 </span>
 
               </button>
@@ -423,12 +516,16 @@ export default function AdminDashboard() {
                   🏥
                 </span>
 
-                <span>
+                <span style={styles.actionText}>
+
                   <strong>
-                    Manage Hospitals </strong>
+                    Manage Hospitals
+                  </strong>
 
                   <small>
-                    View hospital information </small>
+                    View hospital information
+                  </small>
+
                 </span>
 
               </button>
@@ -444,13 +541,16 @@ export default function AdminDashboard() {
                   📅
                 </span>
 
-                <span>
+                <span style={styles.actionText}>
+
                   <strong>
-                    Appointments </strong>
+                    Appointments
+                  </strong>
 
                   <small>
                     Monitor appointments
                   </small>
+
                 </span>
 
               </button>
@@ -459,7 +559,7 @@ export default function AdminDashboard() {
 
           </div>
 
-          {/* System Status */}
+          {/* SYSTEM STATUS */}
 
           <div style={styles.card}>
 
@@ -472,35 +572,51 @@ export default function AdminDashboard() {
             </p>
 
             <div style={styles.statusItem}>
-              <span>Website</span>
+
+              <span>
+                Website
+              </span>
 
               <span style={styles.online}>
                 ● Online
               </span>
+
             </div>
 
             <div style={styles.statusItem}>
-              <span>Database</span>
+
+              <span>
+                Database
+              </span>
 
               <span style={styles.online}>
                 ● Connected
               </span>
+
             </div>
 
             <div style={styles.statusItem}>
-              <span>Appointments</span>
+
+              <span>
+                Appointments
+              </span>
 
               <span style={styles.online}>
                 ● Active
               </span>
+
             </div>
 
             <div style={styles.statusItem}>
-              <span>System</span>
+
+              <span>
+                System
+              </span>
 
               <span style={styles.online}>
                 ● Healthy
               </span>
+
             </div>
 
           </div>
@@ -534,19 +650,52 @@ export default function AdminDashboard() {
 
           </div>
 
+          {/* Loading */}
+
           {loading && (
-            <p style={styles.loadingText}>
-              Loading appointments...
-            </p>
+
+            <div style={styles.loadingBox}>
+
+              <p style={styles.loadingText}>
+                Loading appointments...
+              </p>
+
+            </div>
+
           )}
+
+          {/* Empty */}
 
           {!loading &&
             !error &&
             appointments.length === 0 && (
-              <p style={styles.loadingText}>
-                No appointments found.
-              </p>
+
+              <div style={styles.emptyBox}>
+
+                <div style={styles.emptyIcon}>
+                  📅
+                </div>
+
+                <h3 style={styles.emptyTitle}>
+                  No appointments found
+                </h3>
+
+                <p style={styles.emptyText}>
+                  New patient appointments will appear here.
+                </p>
+
+                <button
+                  onClick={goToAppointments}
+                  style={styles.emptyButton}
+                >
+                  Book Consultation
+                </button>
+
+              </div>
+
             )}
+
+          {/* Appointments */}
 
           {!loading &&
             !error &&
@@ -596,24 +745,41 @@ export default function AdminDashboard() {
                       .slice(0, 5)
                       .map((appointment) => (
 
-                        <tr key={appointment.id}>
+                        <tr
+                          key={appointment.id}
+                        >
 
                           <td style={styles.tableCell}>
+
                             <strong>
                               {appointment.patient_name}
                             </strong>
+
+                            {appointment.patient_email && (
+
+                              <small
+                                style={styles.patientEmail}
+                              >
+                                {appointment.patient_email}
+                              </small>
+
+                            )}
+
                           </td>
 
                           <td style={styles.tableCell}>
-                            {appointment.hospital_name || "-"}
+                            {appointment.hospital_name ||
+                              "-"}
                           </td>
 
                           <td style={styles.tableCell}>
-                            {appointment.doctor_name || "-"}
+                            {appointment.doctor_name ||
+                              "-"}
                           </td>
 
                           <td style={styles.tableCell}>
-                            {appointment.treatment_name || "-"}
+                            {appointment.treatment_name ||
+                              "-"}
                           </td>
 
                           <td style={styles.tableCell}>
@@ -657,7 +823,14 @@ export default function AdminDashboard() {
   );
 }
 
-const styles: Record<string, React.CSSProperties> = {
+/* =====================================================
+   STYLES
+===================================================== */
+
+const styles: Record<
+  string,
+  React.CSSProperties
+> = {
 
   container: {
     minHeight: "100vh",
@@ -677,6 +850,7 @@ const styles: Record<string, React.CSSProperties> = {
     position: "fixed",
     top: 0,
     bottom: 0,
+    zIndex: 50,
   },
 
   logo: {
@@ -697,6 +871,7 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: "center",
     fontSize: "22px",
     fontWeight: "bold",
+    flexShrink: 0,
   },
 
   logoText: {
@@ -729,6 +904,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: "flex",
     alignItems: "center",
     gap: "12px",
+    width: "100%",
   },
 
   activeNavButton: {
@@ -755,12 +931,14 @@ const styles: Record<string, React.CSSProperties> = {
     marginLeft: "250px",
     width: "calc(100% - 250px)",
     padding: "32px",
+    minWidth: 0,
   },
 
   header: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
+    gap: "20px",
     marginBottom: "28px",
   },
 
@@ -773,12 +951,14 @@ const styles: Record<string, React.CSSProperties> = {
   heading: {
     margin: "5px 0 0",
     fontSize: "30px",
+    lineHeight: 1.2,
   },
 
   adminProfile: {
     display: "flex",
     alignItems: "center",
     gap: "10px",
+    flexShrink: 0,
   },
 
   avatar: {
@@ -801,7 +981,8 @@ const styles: Record<string, React.CSSProperties> = {
 
   statsGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(4, 1fr)",
+    gridTemplateColumns:
+      "repeat(4, minmax(0, 1fr))",
     gap: "18px",
     marginBottom: "22px",
   },
@@ -811,12 +992,23 @@ const styles: Record<string, React.CSSProperties> = {
     border: "1px solid #e6eaf0",
     borderRadius: "15px",
     padding: "20px",
-    boxShadow: "0 3px 12px rgba(0,0,0,0.03)",
+    boxShadow:
+      "0 3px 12px rgba(0,0,0,0.03)",
+    textAlign: "left",
+    cursor: "pointer",
+    width: "100%",
+    minWidth: 0,
   },
 
   statTop: {
     display: "flex",
     justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: "10px",
+  },
+
+  statTextArea: {
+    minWidth: 0,
   },
 
   statTitle: {
@@ -839,6 +1031,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
+    flexShrink: 0,
   },
 
   statDescription: {
@@ -849,7 +1042,8 @@ const styles: Record<string, React.CSSProperties> = {
 
   contentGrid: {
     display: "grid",
-    gridTemplateColumns: "2fr 1fr",
+    gridTemplateColumns:
+      "minmax(0, 2fr) minmax(280px, 1fr)",
     gap: "20px",
     marginBottom: "20px",
   },
@@ -859,13 +1053,17 @@ const styles: Record<string, React.CSSProperties> = {
     border: "1px solid #e6eaf0",
     borderRadius: "15px",
     padding: "24px",
-    boxShadow: "0 3px 12px rgba(0,0,0,0.03)",
+    boxShadow:
+      "0 3px 12px rgba(0,0,0,0.03)",
     marginBottom: "20px",
+    minWidth: 0,
   },
 
   cardHeader: {
     display: "flex",
     justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: "15px",
     marginBottom: "20px",
   },
 
@@ -882,7 +1080,8 @@ const styles: Record<string, React.CSSProperties> = {
 
   actionsGrid: {
     display: "grid",
-    gridTemplateColumns: "1fr 1fr",
+    gridTemplateColumns:
+      "repeat(2, minmax(0, 1fr))",
     gap: "12px",
   },
 
@@ -896,15 +1095,26 @@ const styles: Record<string, React.CSSProperties> = {
     gap: "12px",
     cursor: "pointer",
     textAlign: "left",
+    width: "100%",
+    minWidth: 0,
   },
 
   actionIcon: {
     fontSize: "25px",
+    flexShrink: 0,
+  },
+
+  actionText: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "4px",
+    minWidth: 0,
   },
 
   statusItem: {
     display: "flex",
     justifyContent: "space-between",
+    gap: "10px",
     padding: "14px 0",
     borderBottom: "1px solid #edf0f4",
     fontSize: "14px",
@@ -913,21 +1123,40 @@ const styles: Record<string, React.CSSProperties> = {
   online: {
     color: "#16a34a",
     fontWeight: "bold",
+    whiteSpace: "nowrap",
+  },
+
+  loadingBox: {
+    padding: "35px 0",
+    textAlign: "center",
   },
 
   loadingText: {
-    padding: "30px 0",
+    margin: 0,
     color: "#7b8495",
-    textAlign: "center",
   },
 
   errorBox: {
     marginBottom: "20px",
-    padding: "14px 18px",
+    padding: "16px 18px",
     borderRadius: "10px",
     background: "#fef2f2",
     border: "1px solid #fecaca",
     color: "#b91c1c",
+  },
+
+  errorText: {
+    margin: "5px 0 12px",
+  },
+
+  retryButton: {
+    border: "none",
+    background: "#b91c1c",
+    color: "#ffffff",
+    padding: "8px 14px",
+    borderRadius: "7px",
+    cursor: "pointer",
+    fontWeight: "600",
   },
 
   viewAllButton: {
@@ -938,11 +1167,46 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: "8px",
     cursor: "pointer",
     fontWeight: "600",
+    whiteSpace: "nowrap",
+  },
+
+  emptyBox: {
+    padding: "45px 20px",
+    textAlign: "center",
+    background: "#fafbfc",
+    borderRadius: "12px",
+    border: "1px dashed #dbe1ea",
+  },
+
+  emptyIcon: {
+    fontSize: "32px",
+  },
+
+  emptyTitle: {
+    margin: "10px 0 0",
+    fontSize: "17px",
+  },
+
+  emptyText: {
+    margin: "6px 0 18px",
+    color: "#7b8495",
+    fontSize: "13px",
+  },
+
+  emptyButton: {
+    border: "none",
+    background: "#DFC5FE",
+    color: "#4C1D95",
+    padding: "9px 16px",
+    borderRadius: "8px",
+    cursor: "pointer",
+    fontWeight: "600",
   },
 
   tableWrapper: {
     width: "100%",
     overflowX: "auto",
+    WebkitOverflowScrolling: "touch",
   },
 
   table: {
@@ -954,17 +1218,27 @@ const styles: Record<string, React.CSSProperties> = {
   tableHeader: {
     textAlign: "left",
     padding: "13px 12px",
-    borderBottom: "1px solid #e5e7eb",
+    borderBottom:
+      "1px solid #e5e7eb",
     color: "#6d7788",
     fontSize: "12px",
     textTransform: "uppercase",
+    whiteSpace: "nowrap",
   },
 
   tableCell: {
     padding: "15px 12px",
-    borderBottom: "1px solid #edf0f4",
+    borderBottom:
+      "1px solid #edf0f4",
     color: "#526075",
     fontSize: "14px",
+  },
+
+  patientEmail: {
+    display: "block",
+    marginTop: "3px",
+    color: "#8a93a3",
+    fontSize: "11px",
   },
 
   pendingStatus: {
