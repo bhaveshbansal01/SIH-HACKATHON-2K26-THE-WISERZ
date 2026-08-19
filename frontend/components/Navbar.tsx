@@ -1,17 +1,28 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 
 export default function Navbar() {
   const [languageOpen, setLanguageOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  const navLinks = [
+    { name: "Home", href: "/" },
+    { name: "Treatments", href: "/treatments" },
+    { name: "Hospitals", href: "/hospitals" },
+    { name: "Doctors", href: "/doctors" },
+    { name: "About India", href: "/about-india" },
+    { name: "How It Works", href: "/how-it-works" },
+    { name: "Contact", href: "/contact" },
+  ];
 
   return (
     <nav className="w-full bg-white border-b border-gray-200">
-      {/* max-w-7xl hatakar w-full lagaya hai aur flex-1 add kiya hai */}
-      <div className="w-full px-6 lg:px-12 h-[72px] flex items-center justify-between">
+      <div className="w-full px-4 sm:px-6 lg:px-12 h-[72px] flex items-center justify-between">
 
-        {/* Logo (Far Left) */}
-        <a href="/" className="flex items-center gap-2 shrink-0">
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-2 shrink-0">
           <div className="flex items-center justify-center w-10 h-10 rounded-full border-2 border-[#DFC5FE] text-[#DFC5FE] text-xl font-bold">
             +
           </div>
@@ -25,60 +36,110 @@ export default function Navbar() {
               Your Health, Our Priority
             </p>
           </div>
-        </a>
+        </Link>
 
-        {/* Navigation Links (Center) */}
-        <div className="hidden lg:flex items-center gap-8 text-[12px] font-medium text-gray-700">
-          <a href="/" className="hover:text-[#DFC5FE] transition-colors">Home</a>
-          <a href="/treatments" className="hover:text-[#DFC5FE] transition-colors">Treatments</a>
-          <a href="/hospitals" className="hover:text-[#DFC5FE] transition-colors">Hospitals</a>
-          <a href="/doctors" className="hover:text-[#DFC5FE] transition-colors">Doctors</a>
-          <a href="/about-india" className="hover:text-[#DFC5FE] transition-colors">About India</a>
-          <a href="/how-it-works" className="hover:text-[#DFC5FE] transition-colors">How It Works</a>
-          <a href="/contact" className="hover:text-[#DFC5FE] transition-colors">Contact</a>
+        {/* Desktop Navigation */}
+        <div className="hidden lg:flex items-center gap-2 text-[12px] font-semibold text-gray-700">
+          {navLinks.map((link) => (
+            <Link
+              key={link.name}
+              href={link.href}
+              className="px-3 py-2 rounded-lg hover:text-[#7C3AED] hover:bg-[#DFC5FE]/20 transition-all"
+            >
+              {link.name}
+            </Link>
+          ))}
         </div>
 
-        {/* Right Side Controls (Far Right) */}
-        <div className="flex items-center gap-4 shrink-0">
+        {/* Right Controls */}
+        <div className="hidden lg:flex items-center gap-4 shrink-0">
 
-          {/* Language Dropdown */}
-          <div className="relative hidden sm:block">
+          {/* Language */}
+          <div className="relative">
             <button
               onClick={() => setLanguageOpen(!languageOpen)}
-              className="flex items-center gap-1.5 text-sm text-gray-700 hover:text-[#DFC5FE] transition-colors"
+              className="flex items-center gap-1.5 text-sm font-medium text-gray-700 hover:text-[#7C3AED] transition-colors"
             >
-              <span className="text-base">🌐</span>
+              <span>🌐</span>
               <span>EN</span>
-              <span className={`text-xs transition-transform ${languageOpen ? "rotate-180" : ""}`}>
+              <span
+                className={`text-xs transition-transform ${
+                  languageOpen ? "rotate-180" : ""
+                }`}
+              >
                 ⌄
               </span>
             </button>
 
             {languageOpen && (
               <div className="absolute right-0 top-9 w-36 bg-white border border-gray-200 rounded-lg shadow-lg py-2 z-50">
-                <button onClick={() => setLanguageOpen(false)} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-[#DFC5FE]/20 transition-colors">
+                <button
+                  onClick={() => setLanguageOpen(false)}
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-[#DFC5FE]/20 transition-colors"
+                >
                   🇬🇧 English
                 </button>
-                <button onClick={() => setLanguageOpen(false)} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-[#DFC5FE]/20 transition-colors">
+
+                <button
+                  onClick={() => setLanguageOpen(false)}
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-[#DFC5FE]/20 transition-colors"
+                >
                   🇮🇳 Hindi
                 </button>
               </div>
             )}
           </div>
 
-          {/* Login + Sign Up Buttons */}
-          <div className="flex gap-3">
-            <button className="border border-purple-300 text-purple-700 px-5 py-2 rounded-lg text-sm font-medium">
-              Login
-            </button>
-            <button className="bg-purple-300 text-white px-5 py-2 rounded-lg text-sm font-medium">
-              Sign Up
-            </button>
-          </div>
+          {/* Login */}
+          <button className="border border-[#DFC5FE] text-[#7C3AED] px-5 py-2 rounded-lg text-sm font-semibold hover:bg-[#DFC5FE]/15 transition-all">
+            Login
+          </button>
 
+          {/* Sign Up */}
+          <button className="bg-[#DFC5FE] text-[#4C1D95] px-5 py-2 rounded-lg text-sm font-semibold hover:bg-[#C9A7F5] transition-all shadow-sm">
+            Sign Up
+          </button>
         </div>
 
+        {/* Mobile Menu Button */}
+        <button
+          onClick={() => setMobileOpen(!mobileOpen)}
+          className="lg:hidden flex items-center justify-center w-10 h-10 rounded-lg border border-[#DFC5FE] text-[#7C3AED] text-xl"
+          aria-label="Toggle menu"
+        >
+          {mobileOpen ? "✕" : "☰"}
+        </button>
       </div>
+
+      {/* Mobile Menu */}
+      {mobileOpen && (
+        <div className="lg:hidden border-t border-gray-100 bg-white px-4 py-4 shadow-sm">
+          <div className="flex flex-col gap-1">
+
+            {navLinks.map((link) => (
+              <Link
+                key={link.name}
+                href={link.href}
+                onClick={() => setMobileOpen(false)}
+                className="px-4 py-3 rounded-lg text-sm font-semibold text-gray-700 hover:text-[#7C3AED] hover:bg-[#DFC5FE]/20 transition-all"
+              >
+                {link.name}
+              </Link>
+            ))}
+
+            <div className="border-t border-gray-100 mt-2 pt-3 flex gap-3">
+              <button className="flex-1 border border-[#DFC5FE] text-[#7C3AED] py-2.5 rounded-lg text-sm font-semibold">
+                Login
+              </button>
+
+              <button className="flex-1 bg-[#DFC5FE] text-[#4C1D95] py-2.5 rounded-lg text-sm font-semibold">
+                Sign Up
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
     </nav>
   );
 }
