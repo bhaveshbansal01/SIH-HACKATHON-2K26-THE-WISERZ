@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 type AppointmentData = {
@@ -15,9 +15,32 @@ type AppointmentData = {
   status?: string;
 };
 
+type Hospital = {
+  id: number;
+  name: string;
+  city?: string;
+};
+
+type Doctor = {
+  id: number;
+  name: string;
+  specialization?: string;
+};
+
+type Treatment = {
+  id: number;
+  name: string;
+  specialty?: string;
+};
+
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
 export default function AppointmentPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  const today = new Date().toISOString().split("T")[0];
 
   const [form, setForm] = useState({
     patient_name: "",
@@ -29,12 +52,91 @@ export default function AppointmentPage() {
     patient_phone: "",
   });
 
+  const [hospitals, setHospitals] = useState<Hospital[]>([]);
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [treatments, setTreatments] = useState<Treatment[]>([]);
+
+  const [loadingHospitals, setLoadingHospitals] = useState(true);
+  const [loadingDoctors, setLoadingDoctors] = useState(true);
+  const [loadingTreatments, setLoadingTreatments] = useState(true);
+
+  const [hospitalError, setHospitalError] = useState("");
+  const [doctorError, setDoctorError] = useState("");
+  const [treatmentError, setTreatmentError] = useState("");
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState<AppointmentData | null>(null);
 
-  const API_URL =
-    process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+  // Load hospitals, doctors and treatments
+  useEffect(() => {
+    const loadHospitals = async () => {
+      try {
+        const response = await fetch(`${API_URL}/api/hospitals`);
+
+        if (!response.ok) {
+          throw new Error("Failed to load hospitals");
+        }
+
+        const data = await response.json();
+
+        setHospitals(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error("Hospital API error:", err);
+        setHospitalError(
+          "Unable to load hospitals. Please try again."
+        );
+      } finally {
+        setLoadingHospitals(false);
+      }
+    };
+
+    const loadDoctors = async () => {
+      try {
+        const response = await fetch(`${API_URL}/api/doctors`);
+
+        if (!response.ok) {
+          throw new Error("Failed to load doctors");
+        }
+
+        const data = await response.json();
+
+        setDoctors(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error("Doctor API error:", err);
+        setDoctorError(
+          "Unable to load doctors. Please try again."
+        );
+      } finally {
+        setLoadingDoctors(false);
+      }
+    };
+
+    const loadTreatments = async () => {
+      try {
+        const response = await fetch(`${API_URL}/api/treatments`);
+
+        if (!response.ok) {
+          throw new Error("Failed to load treatments");
+        }
+
+        const data = await response.json();
+
+        setTreatments(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error("Treatment API error:", err);
+        setTreatmentError(
+          "Unable to load treatments. Please try again."
+        );
+      } finally {
+        setLoadingTreatments(false);
+      }
+    };
+
+    loadHospitals();
+    loadDoctors();
+    loadTreatments();
+  }, []);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -43,6 +145,8 @@ export default function AppointmentPage() {
       ...form,
       [e.target.name]: e.target.value,
     });
+
+    setError("");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -50,6 +154,48 @@ export default function AppointmentPage() {
 
     setLoading(true);
     setError("");
+
+    // Required field validation
+    if (
+      !form.patient_name.trim() ||
+      !form.patient_email.trim() ||
+      !form.patient_phone.trim() ||
+      !form.date ||
+      !form.hospital_name ||
+      !form.doctor_name ||
+      !form.treatment_name
+    ) {
+      setError("All appointment details are required.");
+      setLoading(false);
+      return;
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailRegex.test(form.patient_email)) {
+      setError("Please enter a valid email address.");
+      setLoading(false);
+      return;
+    }
+
+    // Phone validation
+    const phoneRegex = /^[0-9]{10}$/;
+
+    if (!phoneRegex.test(form.patient_phone)) {
+      setError("Please enter a valid 10-digit phone number.");
+      setLoading(false);
+      return;
+    }
+
+    // Past date validation
+    if (form.date < today) {
+      setError(
+        "Please select today or a future appointment date."
+      );
+      setLoading(false);
+      return;
+    }
 
     try {
       const response = await fetch(
@@ -86,19 +232,17 @@ export default function AppointmentPage() {
     }
   };
 
-  /* ------------------------------------------------ */
-  /* SUCCESS SCREEN */
-  /* ------------------------------------------------ */
+  // ------------------------------------------------
+  // SUCCESS SCREEN
+  // ------------------------------------------------
 
   if (success) {
     return (
       <main className="min-h-screen bg-[#f8f7fb] px-6 py-12">
-
         <div className="mx-auto max-w-3xl">
 
           {/* Success Icon */}
           <div className="mb-8 text-center">
-
             <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
               <span className="text-4xl text-green-600">
                 ✓
@@ -114,7 +258,6 @@ export default function AppointmentPage() {
               submitted. Our healthcare team will review your
               request and contact you shortly.
             </p>
-
           </div>
 
           {/* Appointment Card */}
@@ -122,7 +265,6 @@ export default function AppointmentPage() {
 
             {/* Appointment ID */}
             <div className="rounded-2xl bg-[#DFC5FE]/35 p-5">
-
               <p className="text-sm font-medium text-purple-700">
                 APPOINTMENT ID
               </p>
@@ -134,12 +276,10 @@ export default function AppointmentPage() {
               <p className="mt-1 text-sm text-slate-600">
                 Please keep this ID for future reference.
               </p>
-
             </div>
 
             {/* Details */}
             <div className="mt-8">
-
               <h2 className="text-xl font-bold text-slate-900">
                 Appointment Details
               </h2>
@@ -239,7 +379,6 @@ export default function AppointmentPage() {
 
             {/* Message */}
             <div className="mt-6 rounded-2xl border border-purple-100 bg-purple-50 p-5">
-
               <p className="text-sm leading-6 text-purple-900">
                 <strong>What happens next?</strong>
                 <br />
@@ -247,7 +386,6 @@ export default function AppointmentPage() {
                 and contact you using the phone number or email
                 provided above.
               </p>
-
             </div>
 
             {/* Buttons */}
@@ -268,16 +406,13 @@ export default function AppointmentPage() {
               </button>
 
             </div>
-
           </div>
 
           {/* Bottom Trust Message */}
           <div className="mt-6 text-center">
-
             <p className="text-sm text-slate-500">
               Thank you for choosing MediIndia Care 🇮🇳
             </p>
-
           </div>
 
         </div>
@@ -285,36 +420,30 @@ export default function AppointmentPage() {
     );
   }
 
-  /* ------------------------------------------------ */
-  /* APPOINTMENT FORM */
-  /* ------------------------------------------------ */
+  // ------------------------------------------------
+  // APPOINTMENT FORM
+  // ------------------------------------------------
 
   return (
     <main className="min-h-screen bg-white px-6 py-12">
-
       <div className="mx-auto max-w-5xl">
 
         {/* Header */}
         <div className="mb-10 text-center">
 
           <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-purple-200 bg-purple-50 px-4 py-2">
-
             <span className="h-2 w-2 rounded-full bg-purple-600"></span>
 
             <span className="text-sm font-semibold text-purple-700">
               Trusted Healthcare • World-Class Treatment
             </span>
-
           </div>
 
           <h1 className="text-4xl font-bold tracking-tight text-slate-900 md:text-5xl">
-
             Book Your{" "}
-
             <span className="text-purple-700">
               Consultation
             </span>
-
           </h1>
 
           <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-slate-600">
@@ -322,7 +451,6 @@ export default function AppointmentPage() {
             in India. Make your healthcare journey simple,
             transparent and secure.
           </p>
-
         </div>
 
         {/* Appointment Card */}
@@ -330,7 +458,6 @@ export default function AppointmentPage() {
 
           {/* Card Header */}
           <div className="mb-8 rounded-2xl bg-[#DFC5FE]/35 p-5">
-
             <h2 className="text-xl font-bold text-slate-900">
               Patient & Appointment Details
             </h2>
@@ -339,7 +466,6 @@ export default function AppointmentPage() {
               Enter your details to request a consultation
               with your preferred healthcare provider.
             </p>
-
           </div>
 
           <form onSubmit={handleSubmit}>
@@ -348,7 +474,6 @@ export default function AppointmentPage() {
 
               {/* Patient Name */}
               <div>
-
                 <label className="mb-2 block text-sm font-semibold text-slate-700">
                   Patient Name
                 </label>
@@ -361,12 +486,10 @@ export default function AppointmentPage() {
                   placeholder="Enter your name"
                   className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-purple-300 focus:ring-4 focus:ring-purple-100"
                 />
-
               </div>
 
               {/* Email */}
               <div>
-
                 <label className="mb-2 block text-sm font-semibold text-slate-700">
                   Email Address
                 </label>
@@ -380,12 +503,10 @@ export default function AppointmentPage() {
                   placeholder="you@example.com"
                   className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-purple-300 focus:ring-4 focus:ring-purple-100"
                 />
-
               </div>
 
               {/* Phone */}
               <div>
-
                 <label className="mb-2 block text-sm font-semibold text-slate-700">
                   Phone Number
                 </label>
@@ -396,17 +517,16 @@ export default function AppointmentPage() {
                   value={form.patient_phone}
                   onChange={handleChange}
                   required
+                  inputMode="numeric"
                   maxLength={10}
                   pattern="[0-9]{10}"
                   placeholder="10-digit phone number"
                   className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-purple-300 focus:ring-4 focus:ring-purple-100"
                 />
-
               </div>
 
               {/* Appointment Date */}
               <div>
-
                 <label className="mb-2 block text-sm font-semibold text-slate-700">
                   Appointment Date
                 </label>
@@ -416,65 +536,130 @@ export default function AppointmentPage() {
                   name="date"
                   value={form.date}
                   onChange={handleChange}
+                  min={today}
                   required
-                  min={new Date().toISOString().split("T")[0]}
                   className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-slate-900 outline-none transition focus:border-purple-300 focus:ring-4 focus:ring-purple-100"
                 />
-
               </div>
 
               {/* Hospital */}
               <div>
-
                 <label className="mb-2 block text-sm font-semibold text-slate-700">
                   Hospital
                 </label>
 
-                <input
+                <select
                   name="hospital_name"
                   value={form.hospital_name}
                   onChange={handleChange}
                   required
-                  placeholder="Hospital name"
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-purple-300 focus:ring-4 focus:ring-purple-100"
-                />
+                  disabled={loadingHospitals}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-slate-900 outline-none transition focus:border-purple-300 focus:ring-4 focus:ring-purple-100 disabled:cursor-not-allowed disabled:bg-slate-50"
+                >
+                  <option value="">
+                    {loadingHospitals
+                      ? "Loading hospitals..."
+                      : "Select Hospital"}
+                  </option>
 
+                  {hospitals.map((hospital) => (
+                    <option
+                      key={hospital.id}
+                      value={hospital.name}
+                    >
+                      {hospital.name}
+                      {hospital.city
+                        ? ` — ${hospital.city}`
+                        : ""}
+                    </option>
+                  ))}
+                </select>
+
+                {hospitalError && (
+                  <p className="mt-2 text-sm text-red-600">
+                    {hospitalError}
+                  </p>
+                )}
               </div>
 
               {/* Doctor */}
               <div>
-
                 <label className="mb-2 block text-sm font-semibold text-slate-700">
                   Doctor
                 </label>
 
-                <input
+                <select
                   name="doctor_name"
                   value={form.doctor_name}
                   onChange={handleChange}
                   required
-                  placeholder="Doctor name"
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-purple-300 focus:ring-4 focus:ring-purple-100"
-                />
+                  disabled={loadingDoctors}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-slate-900 outline-none transition focus:border-purple-300 focus:ring-4 focus:ring-purple-100 disabled:cursor-not-allowed disabled:bg-slate-50"
+                >
+                  <option value="">
+                    {loadingDoctors
+                      ? "Loading doctors..."
+                      : "Select Doctor"}
+                  </option>
 
+                  {doctors.map((doctor) => (
+                    <option
+                      key={doctor.id}
+                      value={doctor.name}
+                    >
+                      {doctor.name}
+                      {doctor.specialization
+                        ? ` — ${doctor.specialization}`
+                        : ""}
+                    </option>
+                  ))}
+                </select>
+
+                {doctorError && (
+                  <p className="mt-2 text-sm text-red-600">
+                    {doctorError}
+                  </p>
+                )}
               </div>
 
               {/* Treatment */}
               <div className="md:col-span-2">
-
                 <label className="mb-2 block text-sm font-semibold text-slate-700">
                   Treatment
                 </label>
 
-                <input
+                <select
                   name="treatment_name"
                   value={form.treatment_name}
                   onChange={handleChange}
                   required
-                  placeholder="Treatment you are interested in"
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-purple-300 focus:ring-4 focus:ring-purple-100"
-                />
+                  disabled={loadingTreatments}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-slate-900 outline-none transition focus:border-purple-300 focus:ring-4 focus:ring-purple-100 disabled:cursor-not-allowed disabled:bg-slate-50"
+                >
+                  <option value="">
+                    {loadingTreatments
+                      ? "Loading treatments..."
+                      : "Select Treatment"}
+                  </option>
 
+                  {treatments.map((treatment) => (
+                    <option
+                      key={treatment.id}
+                      value={treatment.name}
+                    >
+                      {treatment.name}
+                      {treatment.specialty
+                        ? ` — ${treatment.specialty}`
+                        : ""}
+                    </option>
+                  ))}
+                </select>
+
+                {treatmentError && (
+                  <p className="mt-2 text-sm text-red-600">
+                    {treatmentError}
+                  </p>
+                )}
               </div>
 
             </div>
@@ -498,7 +683,6 @@ export default function AppointmentPage() {
             </button>
 
           </form>
-
         </div>
 
         {/* Trust Features */}
@@ -506,7 +690,6 @@ export default function AppointmentPage() {
 
           {/* Hospitals */}
           <div className="rounded-2xl border border-purple-100 bg-purple-50/50 p-5 text-center">
-
             <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-[#DFC5FE] font-bold text-purple-700">
               +
             </div>
@@ -518,12 +701,10 @@ export default function AppointmentPage() {
             <p className="mt-1 text-sm text-slate-600">
               Find trusted healthcare providers across India.
             </p>
-
           </div>
 
           {/* Doctors */}
           <div className="rounded-2xl border border-purple-100 bg-purple-50/50 p-5 text-center">
-
             <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-[#DFC5FE] font-bold text-purple-700">
               +
             </div>
@@ -535,12 +716,10 @@ export default function AppointmentPage() {
             <p className="mt-1 text-sm text-slate-600">
               Connect with experienced medical professionals.
             </p>
-
           </div>
 
           {/* Secure */}
           <div className="rounded-2xl border border-purple-100 bg-purple-50/50 p-5 text-center">
-
             <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-[#DFC5FE] font-bold text-purple-700">
               +
             </div>
@@ -552,13 +731,11 @@ export default function AppointmentPage() {
             <p className="mt-1 text-sm text-slate-600">
               Submit your consultation request safely and easily.
             </p>
-
           </div>
 
         </div>
 
       </div>
-
     </main>
   );
 }

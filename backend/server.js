@@ -109,81 +109,39 @@ app.get("/api/appointments", async (req, res) => {
     });
   }
 });
+// ===============================
+// PROVIDERS / DOCTORS
+// Supabase table: doctors
+// ===============================
 
+// GET ALL DOCTORS
 app.get("/api/doctors", async (req, res) => {
   try {
     const { data, error } = await supabase
       .from("doctors")
-      .select("*");
-
-    if (error) {
-      console.error("Supabase error:", error);
-      return res.status(500).json({
-        error: error.message
-      });
-    }
-
-    res.json(data);
-  } catch (error) {
-    console.error("Server error:", error);
-
-    res.status(500).json({
-      error: error.message
-    });
-  }
-});
-
-app.get("/api/treatments", async (req, res) => {
-  try {
-    const { data, error } = await supabase
-      .from("treatments")
-      .select("*");
-
-    if (error) {
-      console.error("Supabase error:", error);
-      return res.status(500).json({
-        error: error.message
-      });
-    }
-
-    res.json(data);
-  } catch (error) {
-    console.error("Server error:", error);
-
-    res.status(500).json({
-      error: error.message
-    });
-  }
-});
-
-app.get("/api/treatments/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const { data, error } = await supabase
-      .from("treatments")
       .select("*")
-      .eq("id", id)
-      .single();
+      .order("id", { ascending: true });
 
     if (error) {
-      console.error("Supabase error:", error);
+      console.error("Supabase doctors error:", error);
 
-      return res.status(404).json({
-        error: "Treatment not found"
+      return res.status(500).json({
+        error: error.message,
       });
     }
 
-    res.json(data);
+    res.json(data || []);
   } catch (error) {
     console.error("Server error:", error);
 
     res.status(500).json({
-      error: error.message
+      error: error.message,
     });
   }
 });
 
+
+// GET SINGLE DOCTOR
 app.get("/api/doctors/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -198,7 +156,7 @@ app.get("/api/doctors/:id", async (req, res) => {
       console.error("Supabase error:", error);
 
       return res.status(404).json({
-        error: "Doctor not found"
+        error: "Doctor not found",
       });
     }
 
@@ -207,17 +165,183 @@ app.get("/api/doctors/:id", async (req, res) => {
     console.error("Server error:", error);
 
     res.status(500).json({
-      error: error.message
+      error: error.message,
     });
   }
 });
 
-app.get("/api/hospitals/:id", async (req, res) => {
+
+// ADD DOCTOR
+app.post("/api/doctors", async (req, res) => {
+  try {
+    const {
+      name,
+      specialty,
+      hospital,
+      location,
+      status,
+    } = req.body;
+
+    if (
+      !name ||
+      !specialty ||
+      !hospital ||
+      !location
+    ) {
+      return res.status(400).json({
+        error:
+          "Name, specialty, hospital and location are required",
+      });
+    }
+
+    const { data, error } = await supabase
+      .from("doctors")
+      .insert([
+        {
+          name: name.trim(),
+          specialty: specialty.trim(),
+          hospital: hospital.trim(),
+          location: location.trim(),
+          status: status || "Active",
+        },
+      ])
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Supabase add doctor error:", error);
+
+      return res.status(500).json({
+        error: error.message,
+      });
+    }
+
+    res.status(201).json(data);
+  } catch (error) {
+    console.error("Server error:", error);
+
+    res.status(500).json({
+      error: error.message,
+    });
+  }
+});
+
+
+// UPDATE DOCTOR
+app.put("/api/doctors/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const {
+      name,
+      specialty,
+      hospital,
+      location,
+      status,
+    } = req.body;
+
+    const { data, error } = await supabase
+      .from("doctors")
+      .update({
+        name: name?.trim(),
+        specialty: specialty?.trim(),
+        hospital: hospital?.trim(),
+        location: location?.trim(),
+        status: status || "Active",
+      })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Supabase update doctor error:", error);
+
+      return res.status(500).json({
+        error: error.message,
+      });
+    }
+
+    res.json(data);
+  } catch (error) {
+    console.error("Server error:", error);
+
+    res.status(500).json({
+      error: error.message,
+    });
+  }
+});
+
+
+// DELETE DOCTOR
+app.delete("/api/doctors/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const { error } = await supabase
+      .from("doctors")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      console.error("Supabase delete doctor error:", error);
+
+      return res.status(500).json({
+        error: error.message,
+      });
+    }
+
+    res.json({
+      message: "Doctor deleted successfully",
+    });
+  } catch (error) {
+    console.error("Server error:", error);
+
+    res.status(500).json({
+      error: error.message,
+    });
+  }
+});
+
+
+// ===============================
+// TREATMENTS
+// Supabase table: treatments
+// ===============================
+
+// GET ALL TREATMENTS
+app.get("/api/treatments", async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from("treatments")
+      .select("*")
+      .order("id", { ascending: true });
+
+    if (error) {
+      console.error("Supabase treatments error:", error);
+
+      return res.status(500).json({
+        error: error.message,
+      });
+    }
+
+    res.json(data || []);
+  } catch (error) {
+    console.error("Server error:", error);
+
+    res.status(500).json({
+      error: error.message,
+    });
+  }
+});
+
+
+// GET SINGLE TREATMENT
+app.get("/api/treatments/:id", async (req, res) => {
   try {
     const { id } = req.params;
 
     const { data, error } = await supabase
-      .from("hospitals")
+      .from("treatments")
       .select("*")
       .eq("id", id)
       .single();
@@ -226,7 +350,7 @@ app.get("/api/hospitals/:id", async (req, res) => {
       console.error("Supabase error:", error);
 
       return res.status(404).json({
-        error: "Hospital not found"
+        error: "Treatment not found",
       });
     }
 
@@ -235,95 +359,140 @@ app.get("/api/hospitals/:id", async (req, res) => {
     console.error("Server error:", error);
 
     res.status(500).json({
-      error: error.message
+      error: error.message,
     });
   }
 });
 
-app.post("/api/appointments", async (req, res) => {
+
+// ADD TREATMENT
+app.post("/api/treatments", async (req, res) => {
   try {
     const {
-      patient_name,
-      doctor_name,
-      date,
-      hospital_name,
-      treatment_name,
-      patient_email,
-      patient_phone
+      name,
+      category,
+      hospital,
+      location,
+      status,
     } = req.body;
 
-    // Required field validation
-    if (
-      !patient_name ||
-      !doctor_name ||
-      !date ||
-      !hospital_name ||
-      !treatment_name ||
-      !patient_email ||
-      !patient_phone
-    ) {
+    if (!name || !category || !hospital || !location) {
       return res.status(400).json({
-        error: "All appointment details are required"
+        error:
+          "Name, category, hospital and location are required",
       });
     }
 
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    if (!emailRegex.test(patient_email)) {
-      return res.status(400).json({
-        error: "Please enter a valid email"
-      });
-    }
-
-    // Phone validation
-    const phoneRegex = /^[0-9]{10}$/;
-
-    if (!phoneRegex.test(patient_phone)) {
-      return res.status(400).json({
-        error: "Please enter a valid 10-digit phone number"
-      });
-    }
-
-    // Save appointment to Supabase
     const { data, error } = await supabase
-      .from("appointments")
+      .from("treatments")
       .insert([
         {
-          patient_name,
-          doctor_name,
-          date,
-          hospital_name,
-          treatment_name,
-          patient_email,
-          patient_phone,
-          status: "Pending"
-        }
+          name: name.trim(),
+          category: category.trim(),
+          hospital: hospital.trim(),
+          location: location.trim(),
+          status: status || "Active",
+        },
       ])
       .select()
       .single();
 
     if (error) {
-      console.error("Supabase error:", error);
+      console.error("Supabase add treatment error:", error);
 
       return res.status(500).json({
-        error: error.message
+        error: error.message,
       });
     }
 
     res.status(201).json(data);
-
   } catch (error) {
     console.error("Server error:", error);
 
     res.status(500).json({
-      error: error.message
+      error: error.message,
     });
   }
 });
 
-const PORT = 5000;
+
+// UPDATE TREATMENT
+app.put("/api/treatments/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const {
+      name,
+      category,
+      hospital,
+      location,
+      status,
+    } = req.body;
+
+    const { data, error } = await supabase
+      .from("treatments")
+      .update({
+        name: name?.trim(),
+        category: category?.trim(),
+        hospital: hospital?.trim(),
+        location: location?.trim(),
+        status: status || "Active",
+      })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Supabase update treatment error:", error);
+
+      return res.status(500).json({
+        error: error.message,
+      });
+    }
+
+    res.json(data);
+  } catch (error) {
+    console.error("Server error:", error);
+
+    res.status(500).json({
+      error: error.message,
+    });
+  }
+});
+
+
+// DELETE TREATMENT
+app.delete("/api/treatments/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const { error } = await supabase
+      .from("treatments")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      console.error("Supabase delete treatment error:", error);
+
+      return res.status(500).json({
+        error: error.message,
+      });
+    }
+
+    res.json({
+      message: "Treatment deleted successfully",
+    });
+  } catch (error) {
+    console.error("Server error:", error);
+
+    res.status(500).json({
+      error: error.message,
+    });
+  }
+});
+// START SERVER
+const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
-  console.log(`Backend running on http://localhost:${PORT}`);
+  console.log(`MediIndia Care backend running on http://localhost:${PORT}`);
 });
