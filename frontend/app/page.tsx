@@ -8,6 +8,7 @@ import WhyChooseIndia from "@/components/WhyChooseIndia";
 import PopularTreatments from "@/components/PopularTreatments";
 import HowItWorks from "@/components/HowItWorks";
 import CTASection from "@/components/CTASection";
+import AIRecommendationWidget from "@/components/AIRecommendationWidget";
 
 type Doctor = {
   id: number;
@@ -733,6 +734,8 @@ export default function Home() {
       <HowItWorks />
 
       <CTASection />
+
+      <AIRecommendationWidget />
 
     </main>
   );
