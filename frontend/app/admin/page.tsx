@@ -381,8 +381,7 @@ export default function AdminDashboard() {
 
                 <span>
                   <strong>
-                    Manage Providers
-                  </strong>
+                    Manage Providers </strong>
 
                   <small>
                     View and manage providers
@@ -404,8 +403,7 @@ export default function AdminDashboard() {
 
                 <span>
                   <strong>
-                    Manage Treatments
-                  </strong>
+                    Manage Treatments </strong>
 
                   <small>
                     Add or update treatments
@@ -427,12 +425,10 @@ export default function AdminDashboard() {
 
                 <span>
                   <strong>
-                    Manage Hospitals
-                  </strong>
+                    Manage Hospitals </strong>
 
                   <small>
-                    View hospital information
-                  </small>
+                    View hospital information </small>
                 </span>
 
               </button>
@@ -450,8 +446,7 @@ export default function AdminDashboard() {
 
                 <span>
                   <strong>
-                    Appointments
-                  </strong>
+                    Appointments </strong>
 
                   <small>
                     Monitor appointments
