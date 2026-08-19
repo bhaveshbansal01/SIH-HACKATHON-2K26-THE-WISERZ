@@ -1,41 +1,156 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+
+type Appointment = {
+  id: number;
+  patient_name: string;
+  doctor_name: string;
+  date: string;
+  status: string;
+  hospital_name?: string;
+  treatment_name?: string;
+  patient_email?: string;
+  patient_phone?: string;
+};
+
+type StatsData = {
+  providers: number;
+  treatments: number;
+  appointments: number;
+  hospitals: number;
+};
 
 export default function AdminDashboard() {
   const router = useRouter();
 
   const [activeMenu, setActiveMenu] = useState("Dashboard");
 
-  // Go to Provider Management page
-  const goToProviders = () => {
-    setActiveMenu("Providers");
-    router.push("/admin/providers");
+  const [stats, setStats] = useState<StatsData>({
+    providers: 0,
+    treatments: 0,
+    appointments: 0,
+    hospitals: 0,
+  });
+
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  // =========================
+  // NAVIGATION
+  // =========================
+
+  const goToDashboard = () => {
+    setActiveMenu("Dashboard");
+    router.push("/admin");
   };
 
-  const stats = [
+  const goToProviders = () => {
+    setActiveMenu("Providers");
+    router.push("/doctors");
+  };
+
+  const goToTreatments = () => {
+    setActiveMenu("Treatments");
+    router.push("/treatments");
+  };
+
+  const goToHospitals = () => {
+    setActiveMenu("Hospitals");
+    router.push("/hospitals");
+  };
+
+  const goToAppointments = () => {
+    setActiveMenu("Appointments");
+    router.push("/appointment");
+  };
+
+  // =========================
+  // FETCH DASHBOARD DATA
+  // =========================
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const [
+          doctorsResponse,
+          treatmentsResponse,
+          appointmentsResponse,
+          hospitalsResponse,
+        ] = await Promise.all([
+          fetch("http://localhost:5000/api/doctors"),
+          fetch("http://localhost:5000/api/treatments"),
+          fetch("http://localhost:5000/api/appointments"),
+          fetch("http://localhost:5000/api/hospitals"),
+        ]);
+
+        if (
+          !doctorsResponse.ok ||
+          !treatmentsResponse.ok ||
+          !appointmentsResponse.ok ||
+          !hospitalsResponse.ok
+        ) {
+          throw new Error("Failed to load dashboard data");
+        }
+
+        const doctors = await doctorsResponse.json();
+        const treatments = await treatmentsResponse.json();
+        const appointmentData = await appointmentsResponse.json();
+        const hospitals = await hospitalsResponse.json();
+
+        const appointmentList = Array.isArray(appointmentData)
+          ? appointmentData
+          : [appointmentData];
+
+        setStats({
+          providers: Array.isArray(doctors) ? doctors.length : 0,
+          treatments: Array.isArray(treatments) ? treatments.length : 0,
+          appointments: appointmentList.length,
+          hospitals: Array.isArray(hospitals) ? hospitals.length : 0,
+        });
+
+        setAppointments(appointmentList);
+      } catch (err) {
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Unable to load dashboard data."
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  const statCards = [
     {
       title: "Total Providers",
-      value: "24",
+      value: stats.providers,
       icon: "👨‍⚕️",
       description: "Registered providers",
     },
     {
       title: "Total Treatments",
-      value: "18",
+      value: stats.treatments,
       icon: "💊",
       description: "Available treatments",
     },
     {
       title: "Appointments",
-      value: "156",
+      value: stats.appointments,
       icon: "📅",
       description: "Total appointments",
     },
     {
       title: "Hospitals",
-      value: "12",
+      value: stats.hospitals,
       icon: "🏥",
       description: "Registered hospitals",
     },
@@ -43,8 +158,11 @@ export default function AdminDashboard() {
 
   return (
     <div style={styles.container}>
-      {/* Sidebar */}
+
+      {/* ================= SIDEBAR ================= */}
+
       <aside style={styles.sidebar}>
+
         <div style={styles.logo}>
           <div style={styles.logoIcon}>M</div>
 
@@ -54,45 +172,80 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Navigation */}
         <nav style={styles.nav}>
-          {[
-            "Dashboard",
-            "Providers",
-            "Treatments",
-            "Hospitals",
-            "Appointments",
-          ].map((item) => (
-            <button
-              key={item}
-              onClick={() => {
-                if (item === "Providers") {
-                  goToProviders();
-                } else {
-                  setActiveMenu(item);
-                }
-              }}
-              style={{
-                ...styles.navButton,
-                ...(activeMenu === item
-                  ? styles.activeNavButton
-                  : {}),
-              }}
-            >
-              <span>
-                {item === "Dashboard" && "📊"}
-                {item === "Providers" && "👨‍⚕️"}
-                {item === "Treatments" && "💊"}
-                {item === "Hospitals" && "🏥"}
-                {item === "Appointments" && "📅"}
-              </span>
 
-              {item}
-            </button>
-          ))}
+          {/* Dashboard */}
+          <button
+            onClick={goToDashboard}
+            style={{
+              ...styles.navButton,
+              ...(activeMenu === "Dashboard"
+                ? styles.activeNavButton
+                : {}),
+            }}
+          >
+            <span>📊</span>
+            Dashboard
+          </button>
+
+          {/* Providers */}
+          <button
+            onClick={goToProviders}
+            style={{
+              ...styles.navButton,
+              ...(activeMenu === "Providers"
+                ? styles.activeNavButton
+                : {}),
+            }}
+          >
+            <span>👨‍⚕️</span>
+            Providers
+          </button>
+
+          {/* Treatments */}
+          <button
+            onClick={goToTreatments}
+            style={{
+              ...styles.navButton,
+              ...(activeMenu === "Treatments"
+                ? styles.activeNavButton
+                : {}),
+            }}
+          >
+            <span>💊</span>
+            Treatments
+          </button>
+
+          {/* Hospitals */}
+          <button
+            onClick={goToHospitals}
+            style={{
+              ...styles.navButton,
+              ...(activeMenu === "Hospitals"
+                ? styles.activeNavButton
+                : {}),
+            }}
+          >
+            <span>🏥</span>
+            Hospitals
+          </button>
+
+          {/* Appointments */}
+          <button
+            onClick={goToAppointments}
+            style={{
+              ...styles.navButton,
+              ...(activeMenu === "Appointments"
+                ? styles.activeNavButton
+                : {}),
+            }}
+          >
+            <span>📅</span>
+            Appointments
+          </button>
+
         </nav>
 
-        {/* Bottom Sidebar */}
         <div style={styles.sidebarBottom}>
           <button
             style={styles.backButton}
@@ -101,65 +254,106 @@ export default function AdminDashboard() {
             ← Back to Website
           </button>
         </div>
+
       </aside>
 
-      {/* Main Content */}
-      <main style={styles.main}>
-        {/* Header */}
-        <header style={styles.header}>
-          <div>
-            <p style={styles.smallText}>Welcome back, Admin</p>
+      {/* ================= MAIN ================= */}
 
-            <h1 style={styles.heading}>Admin Dashboard</h1>
+      <main style={styles.main}>
+
+        {/* Header */}
+
+        <header style={styles.header}>
+
+          <div>
+            <p style={styles.smallText}>
+              Welcome back, Admin
+            </p>
+
+            <h1 style={styles.heading}>
+              Admin Dashboard
+            </h1>
           </div>
 
           <div style={styles.adminProfile}>
-            <div style={styles.avatar}>A</div>
+
+            <div style={styles.avatar}>
+              A
+            </div>
 
             <div>
               <strong>Administrator</strong>
 
-              <p style={styles.profileRole}>System Admin</p>
+              <p style={styles.profileRole}>
+                System Admin
+              </p>
             </div>
+
           </div>
+
         </header>
 
-        {/* Stats */}
+        {/* Error */}
+
+        {error && (
+          <div style={styles.errorBox}>
+            {error}
+          </div>
+        )}
+
+        {/* ================= STATS ================= */}
+
         <section style={styles.statsGrid}>
-          {stats.map((stat) => (
+
+          {statCards.map((stat) => (
+
             <div
               key={stat.title}
               style={styles.statCard}
             >
+
               <div style={styles.statTop}>
+
                 <div>
+
                   <p style={styles.statTitle}>
                     {stat.title}
                   </p>
 
                   <h2 style={styles.statValue}>
-                    {stat.value}
+                    {loading ? "..." : stat.value}
                   </h2>
+
                 </div>
 
                 <div style={styles.statIcon}>
                   {stat.icon}
                 </div>
+
               </div>
 
               <p style={styles.statDescription}>
                 {stat.description}
               </p>
+
             </div>
+
           ))}
+
         </section>
 
-        {/* Main Cards */}
+        {/* ================= QUICK ACTIONS + STATUS ================= */}
+
         <section style={styles.contentGrid}>
+
           {/* Quick Actions */}
+
           <div style={styles.card}>
+
             <div style={styles.cardHeader}>
+
               <div>
+
                 <h2 style={styles.cardTitle}>
                   Quick Actions
                 </h2>
@@ -167,92 +361,108 @@ export default function AdminDashboard() {
                 <p style={styles.cardSubtitle}>
                   Manage the healthcare platform
                 </p>
+
               </div>
+
             </div>
 
             <div style={styles.actionsGrid}>
-              {/* PROVIDERS */}
+
+              {/* Providers */}
+
               <button
                 style={styles.actionButton}
                 onClick={goToProviders}
               >
+
                 <span style={styles.actionIcon}>
                   👨‍⚕️
                 </span>
 
                 <span>
-                  <strong>Manage Providers</strong>
+                  <strong>
+                    Manage Providers </strong>
 
                   <small>
                     View and manage providers
                   </small>
                 </span>
+
               </button>
 
-              {/* TREATMENTS */}
+              {/* Treatments */}
+
               <button
                 style={styles.actionButton}
-                onClick={() =>
-                  setActiveMenu("Treatments")
-                }
+                onClick={goToTreatments}
               >
+
                 <span style={styles.actionIcon}>
                   💊
                 </span>
 
                 <span>
-                  <strong>Manage Treatments</strong>
+                  <strong>
+                    Manage Treatments </strong>
 
                   <small>
                     Add or update treatments
                   </small>
                 </span>
+
               </button>
 
-              {/* HOSPITALS */}
+              {/* Hospitals */}
+
               <button
                 style={styles.actionButton}
-                onClick={() =>
-                  setActiveMenu("Hospitals")
-                }
+                onClick={goToHospitals}
               >
+
                 <span style={styles.actionIcon}>
                   🏥
                 </span>
 
                 <span>
-                  <strong>Manage Hospitals</strong>
+                  <strong>
+                    Manage Hospitals </strong>
 
                   <small>
-                    View hospital information
-                  </small>
+                    View hospital information </small>
                 </span>
+
               </button>
 
-              {/* APPOINTMENTS */}
+              {/* Appointments */}
+
               <button
                 style={styles.actionButton}
-                onClick={() =>
-                  setActiveMenu("Appointments")
-                }
+                onClick={goToAppointments}
               >
+
                 <span style={styles.actionIcon}>
                   📅
                 </span>
 
                 <span>
-                  <strong>Appointments</strong>
+                  <strong>
+                    Appointments </strong>
 
                   <small>
                     Monitor appointments
                   </small>
                 </span>
+
               </button>
+
             </div>
+
           </div>
 
           {/* System Status */}
+
           <div style={styles.card}>
+
             <h2 style={styles.cardTitle}>
               System Status
             </h2>
@@ -292,94 +502,163 @@ export default function AdminDashboard() {
                 ● Healthy
               </span>
             </div>
+
           </div>
+
         </section>
 
-        {/* Recent Activity */}
+        {/* ================= RECENT APPOINTMENTS ================= */}
+
         <section style={styles.card}>
+
           <div style={styles.cardHeader}>
+
             <div>
+
               <h2 style={styles.cardTitle}>
-                Recent Activity
+                Recent Appointments
               </h2>
 
               <p style={styles.cardSubtitle}>
-                Latest administrative activities
+                Latest appointments received from patients
               </p>
+
             </div>
+
+            <button
+              onClick={goToAppointments}
+              style={styles.viewAllButton}
+            >
+              View All
+            </button>
+
           </div>
 
-          <div style={styles.activityList}>
-            <div style={styles.activity}>
-              <span style={styles.activityIcon}>
-                👨‍⚕️
-              </span>
+          {loading && (
+            <p style={styles.loadingText}>
+              Loading appointments...
+            </p>
+          )}
 
-              <div>
-                <strong>
-                  New provider registered
-                </strong>
+          {!loading &&
+            !error &&
+            appointments.length === 0 && (
+              <p style={styles.loadingText}>
+                No appointments found.
+              </p>
+            )}
 
-                <p>
-                  New healthcare provider was added
-                  to the system.
-                </p>
+          {!loading &&
+            !error &&
+            appointments.length > 0 && (
+
+              <div style={styles.tableWrapper}>
+
+                <table style={styles.table}>
+
+                  <thead>
+
+                    <tr>
+
+                      <th style={styles.tableHeader}>
+                        Patient
+                      </th>
+
+                      <th style={styles.tableHeader}>
+                        Hospital
+                      </th>
+
+                      <th style={styles.tableHeader}>
+                        Doctor
+                      </th>
+
+                      <th style={styles.tableHeader}>
+                        Treatment
+                      </th>
+
+                      <th style={styles.tableHeader}>
+                        Date
+                      </th>
+
+                      <th style={styles.tableHeader}>
+                        Status
+                      </th>
+
+                    </tr>
+
+                  </thead>
+
+                  <tbody>
+
+                    {appointments
+                      .slice()
+                      .reverse()
+                      .slice(0, 5)
+                      .map((appointment) => (
+
+                        <tr key={appointment.id}>
+
+                          <td style={styles.tableCell}>
+                            <strong>
+                              {appointment.patient_name}
+                            </strong>
+                          </td>
+
+                          <td style={styles.tableCell}>
+                            {appointment.hospital_name || "-"}
+                          </td>
+
+                          <td style={styles.tableCell}>
+                            {appointment.doctor_name || "-"}
+                          </td>
+
+                          <td style={styles.tableCell}>
+                            {appointment.treatment_name || "-"}
+                          </td>
+
+                          <td style={styles.tableCell}>
+                            {appointment.date || "-"}
+                          </td>
+
+                          <td style={styles.tableCell}>
+
+                            <span
+                              style={
+                                appointment.status
+                                  ?.toLowerCase() ===
+                                "confirmed"
+                                  ? styles.confirmedStatus
+                                  : styles.pendingStatus
+                              }
+                            >
+                              {appointment.status ||
+                                "Pending"}
+                            </span>
+
+                          </td>
+
+                        </tr>
+
+                      ))}
+
+                  </tbody>
+
+                </table>
+
               </div>
 
-              <span style={styles.time}>
-                Today
-              </span>
-            </div>
+            )}
 
-            <div style={styles.activity}>
-              <span style={styles.activityIcon}>
-                💊
-              </span>
-
-              <div>
-                <strong>
-                  Treatment updated
-                </strong>
-
-                <p>
-                  Treatment information was
-                  successfully updated.
-                </p>
-              </div>
-
-              <span style={styles.time}>
-                Today
-              </span>
-            </div>
-
-            <div style={styles.activity}>
-              <span style={styles.activityIcon}>
-                📅
-              </span>
-
-              <div>
-                <strong>
-                  Appointment created
-                </strong>
-
-                <p>
-                  A new appointment was added to
-                  the system.
-                </p>
-              </div>
-
-              <span style={styles.time}>
-                Yesterday
-              </span>
-            </div>
-          </div>
         </section>
+
       </main>
+
     </div>
   );
 }
 
 const styles: Record<string, React.CSSProperties> = {
+
   container: {
     minHeight: "100vh",
     display: "flex",
@@ -636,33 +915,75 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: "bold",
   },
 
-  activityList: {
-    display: "flex",
-    flexDirection: "column",
+  loadingText: {
+    padding: "30px 0",
+    color: "#7b8495",
+    textAlign: "center",
   },
 
-  activity: {
-    display: "flex",
-    alignItems: "center",
-    gap: "14px",
-    padding: "14px 0",
-    borderBottom: "1px solid #edf0f4",
-  },
-
-  activityIcon: {
-    width: "42px",
-    height: "42px",
+  errorBox: {
+    marginBottom: "20px",
+    padding: "14px 18px",
     borderRadius: "10px",
-    background: "#eef4ff",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: "20px",
+    background: "#fef2f2",
+    border: "1px solid #fecaca",
+    color: "#b91c1c",
   },
 
-  time: {
-    marginLeft: "auto",
-    color: "#8992a2",
+  viewAllButton: {
+    border: "none",
+    background: "#DFC5FE",
+    color: "#4C1D95",
+    padding: "8px 15px",
+    borderRadius: "8px",
+    cursor: "pointer",
+    fontWeight: "600",
+  },
+
+  tableWrapper: {
+    width: "100%",
+    overflowX: "auto",
+  },
+
+  table: {
+    width: "100%",
+    borderCollapse: "collapse",
+    minWidth: "850px",
+  },
+
+  tableHeader: {
+    textAlign: "left",
+    padding: "13px 12px",
+    borderBottom: "1px solid #e5e7eb",
+    color: "#6d7788",
     fontSize: "12px",
+    textTransform: "uppercase",
+  },
+
+  tableCell: {
+    padding: "15px 12px",
+    borderBottom: "1px solid #edf0f4",
+    color: "#526075",
+    fontSize: "14px",
+  },
+
+  pendingStatus: {
+    display: "inline-block",
+    padding: "5px 10px",
+    borderRadius: "999px",
+    background: "#DFC5FE",
+    color: "#4C1D95",
+    fontSize: "12px",
+    fontWeight: "bold",
+  },
+
+  confirmedStatus: {
+    display: "inline-block",
+    padding: "5px 10px",
+    borderRadius: "999px",
+    background: "#dcfce7",
+    color: "#166534",
+    fontSize: "12px",
+    fontWeight: "bold",
   },
 };
