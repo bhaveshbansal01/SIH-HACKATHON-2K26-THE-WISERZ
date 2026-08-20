@@ -1,3 +1,4 @@
+// This component creates the website's navigation bar
 "use client";
 
 import { useState } from "react";
