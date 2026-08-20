@@ -72,7 +72,7 @@ export default function Home() {
         const [doctorsResponse, hospitalsResponse, treatmentsResponse] =
           await Promise.all([
             fetch("http://localhost:5000/api/doctors"),
-            fetch("http://localhost:5000/api/hospitals"),
+            fetch("http://localhost:5000/api/hospitals"),   
             fetch("http://localhost:5000/api/treatments"),
           ]);
 
