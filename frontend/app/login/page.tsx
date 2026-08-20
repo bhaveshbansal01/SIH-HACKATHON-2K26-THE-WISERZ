@@ -1,354 +1,146 @@
 "use client";
 
+import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useState } from "react";
+
+const ADMIN_EMAIL = "admin@mediindia.com";
+const ADMIN_PASSWORD = "admin123";
 
 export default function LoginPage() {
-  const [showPassword, setShowPassword] = useState(false);
+  const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    // Backend authentication later connect kar sakde ho
-    alert("Login submitted successfully!");
+    setError("");
+    setLoading(true);
+
+    if (!email.trim() || !password.trim()) {
+      setError("Please enter your email and password.");
+      setLoading(false);
+      return;
+    }
+
+    if (
+      email.trim().toLowerCase() === ADMIN_EMAIL &&
+      password === ADMIN_PASSWORD
+    ) {
+      localStorage.setItem("isLoggedIn", "true");
+      localStorage.setItem("userRole", "admin");
+      localStorage.setItem("userEmail", email.trim().toLowerCase());
+
+      router.push("/admin");
+      return;
+    }
+
+    setError("Invalid email or password.");
+    setLoading(false);
   };
 
   return (
-    <main style={styles.page}>
-      <div style={styles.container}>
+    <main className="min-h-screen bg-white flex items-center justify-center px-5 py-10">
+      <div className="w-full max-w-md">
+        {/* Logo / Brand */}
+        <div className="text-center mb-8">
+          <Link href="/" className="inline-block">
+            <h1 className="text-3xl font-bold text-slate-900">
+              MediIndia <span className="text-[#2563A6]">Care</span>
+            </h1>
+          </Link>
 
-        {/* LEFT SIDE */}
-        <div style={styles.leftSide}>
-          <div style={styles.logoCircle}>✚</div>
-
-          <h1 style={styles.brand}>MedIndia Care</h1>
-
-          <p style={styles.tagline}>
-            Your Health, Our Priority
+          <p className="mt-2 text-sm text-gray-500">
+            Healthcare made simple
           </p>
-
-          <div style={styles.leftContent}>
-            <h2>
-              Your journey to better
-              <span> health starts in India.</span>
-            </h2>
-
-            <p>
-              Find trusted hospitals, expert doctors and
-              affordable treatments across India.
-            </p>
-
-            <div style={styles.features}>
-              <div>✓ Verified Hospitals</div>
-              <div>✓ Expert Doctors</div>
-              <div>✓ Affordable Treatment</div>
-            </div>
-          </div>
         </div>
 
-        {/* RIGHT SIDE */}
-        <div style={styles.rightSide}>
-          <div style={styles.card}>
+        {/* Login Card */}
+        <div className="rounded-3xl border border-gray-100 bg-white p-7 sm:p-9 shadow-[0_15px_50px_rgba(0,0,0,0.10)]">
+          <div className="mb-7">
+            <h2 className="text-2xl font-bold text-slate-900">
+              Admin Login
+            </h2>
 
-            <Link href="/" style={styles.back}>
-              ← Back to Home
-            </Link>
-
-            <h1 style={styles.title}>Welcome Back</h1>
-
-            <p style={styles.subtitle}>
-              Login to your MedIndia Care account
+            <p className="mt-2 text-sm text-gray-500">
+              Sign in to access the MediIndia Care dashboard.
             </p>
+          </div>
 
-            <form onSubmit={handleSubmit}>
-
-              {/* EMAIL */}
-              <label style={styles.label}>
-                Email Address
+          <form onSubmit={handleLogin} className="space-y-5">
+            {/* Email */}
+            <div>
+              <label
+                htmlFor="email"
+                className="mb-2 block text-sm font-semibold text-slate-700"
+              >
+                Email
               </label>
 
               <input
+                id="email"
                 type="email"
-                placeholder="you@example.com"
-                required
-                style={styles.input}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email"
+                autoComplete="email"
+                className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-[#2563A6] focus:ring-2 focus:ring-[#2563A6]/10"
               />
-
-              {/* PASSWORD */}
-              <div style={styles.passwordHeader}>
-                <label style={styles.label}>
-                  Password
-                </label>
-
-                <button
-                  type="button"
-                  style={styles.forgot}
-                  onClick={() =>
-                    alert("Password reset coming soon.")
-                  }
-                >
-                  Forgot password?
-                </button>
-              </div>
-
-              <div style={styles.passwordBox}>
-                <input
-                  type={
-                    showPassword
-                      ? "text"
-                      : "password"
-                  }
-                  placeholder="Enter your password"
-                  required
-                  style={styles.passwordInput}
-                />
-
-                <button
-                  type="button"
-                  style={styles.showButton}
-                  onClick={() =>
-                    setShowPassword(!showPassword)
-                  }
-                >
-                  {showPassword ? "Hide" : "Show"}
-                </button>
-              </div>
-
-              {/* REMEMBER */}
-              <label style={styles.remember}>
-                <input type="checkbox" />
-                Remember me
-              </label>
-
-              {/* LOGIN */}
-              <button
-                type="submit"
-                style={styles.loginButton}
-              >
-                Login
-              </button>
-
-            </form>
-
-            <div style={styles.divider}>
-              <span>or</span>
             </div>
 
-            <p style={styles.signupText}>
-              Don't have an account?{" "}
-              <Link
-                href="/signup"
-                style={styles.signupLink}
+            {/* Password */}
+            <div>
+              <label
+                htmlFor="password"
+                className="mb-2 block text-sm font-semibold text-slate-700"
               >
-                Sign Up
-              </Link>
-            </p>
+                Password
+              </label>
 
+              <input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter your password"
+                autoComplete="current-password"
+                className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-[#2563A6] focus:ring-2 focus:ring-[#2563A6]/10"
+              />
+            </div>
+
+            {/* Error */}
+            {error && (
+              <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+                {error}
+              </div>
+            )}
+
+            {/* Login Button */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full rounded-xl bg-[#DFC5FE] px-5 py-3.5 font-semibold text-[#4C1D95] transition hover:bg-[#C9A7F5] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {loading ? "Signing in..." : "Sign In"}
+            </button>
+          </form>
+
+
+          {/* Back to website */}
+          <div className="mt-6 text-center">
+            <Link
+              href="/"
+              className="text-sm font-medium text-[#2563A6] hover:underline"
+            >
+              ← Back to Website
+            </Link>
           </div>
         </div>
-
       </div>
     </main>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-
-  page: {
-    minHeight: "100vh",
-    background:
-      "linear-gradient(135deg, #f7f3ff 0%, #ffffff 50%, #f5f0ff 100%)",
-    fontFamily: "Arial, sans-serif",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "30px",
-    boxSizing: "border-box",
-  },
-
-  container: {
-    width: "100%",
-    maxWidth: "1100px",
-    minHeight: "650px",
-    background: "#ffffff",
-    borderRadius: "25px",
-    overflow: "hidden",
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    boxShadow: "0 20px 60px rgba(80, 50, 130, 0.12)",
-  },
-
-  leftSide: {
-    padding: "45px",
-    background:
-      "linear-gradient(145deg, #c2b3d2, #ffffff)",
-    position: "relative",
-  },
-
-  logoCircle: {
-    width: "45px",
-    height: "45px",
-    borderRadius: "50%",
-    border: "2px solid #d8b4fe",
-    color: "#7c3aed",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: "25px",
-    fontWeight: "bold",
-  },
-
-  brand: {
-    margin: "10px 0 0",
-    color: "#2563eb",
-    fontSize: "27px",
-  },
-
-  tagline: {
-    marginTop: "3px",
-    color: "#7b8495",
-    fontSize: "13px",
-  },
-
-  leftContent: {
-    marginTop: "130px",
-    maxWidth: "470px",
-    color: "#920be7",
-  },
-
-  features: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "15px",
-    marginTop: "30px",
-    color: "#374151",
-    fontSize: "14px",
-  },
-
-  rightSide: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "40px",
-  },
-
-  card: {
-    width: "100%",
-    maxWidth: "400px",
-  },
-
-  back: {
-    color: "#6d28d9",
-    textDecoration: "none",
-    fontSize: "14px",
-  },
-
-  title: {
-    margin: "35px 0 8px",
-    fontSize: "34px",
-    color: "#172033",
-  },
-
-  subtitle: {
-    color: "#7b8495",
-    marginBottom: "30px",
-  },
-
-  label: {
-    display: "block",
-    fontSize: "14px",
-    fontWeight: "bold",
-    color: "#374151",
-    marginBottom: "8px",
-  },
-
-  input: {
-    width: "100%",
-    boxSizing: "border-box",
-    padding: "14px",
-    borderRadius: "10px",
-    border: "1px solid #dce1e8",
-    fontSize: "14px",
-    marginBottom: "20px",
-    outline: "none",
-  },
-
-  passwordHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-
-  forgot: {
-    border: "none",
-    background: "transparent",
-    color: "#7c3aed",
-    cursor: "pointer",
-    fontSize: "12px",
-  },
-
-  passwordBox: {
-    display: "flex",
-    border: "1px solid #dce1e8",
-    borderRadius: "10px",
-    overflow: "hidden",
-    marginBottom: "15px",
-  },
-
-  passwordInput: {
-    flex: 1,
-    border: "none",
-    outline: "none",
-    padding: "14px",
-    fontSize: "14px",
-  },
-
-  showButton: {
-    border: "none",
-    background: "#ffffff",
-    color: "#7c3aed",
-    padding: "0 14px",
-    cursor: "pointer",
-    fontWeight: "bold",
-  },
-
-  remember: {
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    fontSize: "13px",
-    color: "#6b7280",
-    marginBottom: "22px",
-  },
-
-  loginButton: {
-    width: "100%",
-    border: "none",
-    background: "#7c3aed",
-    color: "#ffffff",
-    padding: "14px",
-    borderRadius: "10px",
-    fontSize: "15px",
-    fontWeight: "bold",
-    cursor: "pointer",
-  },
-
-  divider: {
-    textAlign: "center",
-    margin: "25px 0",
-    color: "#9ca3af",
-    fontSize: "13px",
-  },
-
-  signupText: {
-    textAlign: "center",
-    color: "#6b7280",
-    fontSize: "14px",
-  },
-
-  signupLink: {
-    color: "#7c3aed",
-    fontWeight: "bold",
-    textDecoration: "none",
-  },
-};
