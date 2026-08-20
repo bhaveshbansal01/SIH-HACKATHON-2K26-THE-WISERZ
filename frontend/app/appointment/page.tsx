@@ -18,7 +18,7 @@ type AppointmentData = {
 type Hospital = {
   id: number;
   name: string;
-  city?: string;
+  city?: string; 
 };
 
 type Doctor = {
