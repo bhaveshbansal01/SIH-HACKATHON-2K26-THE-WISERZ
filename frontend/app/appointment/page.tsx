@@ -25,6 +25,7 @@ type Doctor = {
   id: number;
   name: string;
   specialization?: string;
+  specialty?: string;
 };
 
 type Treatment = {
@@ -35,6 +36,8 @@ type Treatment = {
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
+const BASE_URL = API_URL.replace(/\/$/, "");
 
 export default function AppointmentPage() {
   const router = useRouter();
@@ -68,86 +71,157 @@ export default function AppointmentPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState<AppointmentData | null>(null);
 
-  // Load hospitals, doctors and treatments
+  // =====================================================
+  // SAFE API JSON FUNCTION
+  // =====================================================
+
+  const fetchJSON = async (url: string, options?: RequestInit) => {
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        Accept: "application/json",
+        ...(options?.body
+          ? { "Content-Type": "application/json" }
+          : {}),
+        ...(options?.headers || {}),
+      },
+    });
+
+    const contentType = response.headers.get("content-type") || "";
+
+    if (!contentType.includes("application/json")) {
+      const text = await response.text();
+
+      console.error("Non-JSON API response:", {
+        url,
+        status: response.status,
+        contentType,
+        response: text.substring(0, 300),
+      });
+
+      throw new Error(
+        `API returned ${response.status} instead of JSON. Check your backend URL.`
+      );
+    }
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data?.error || `Request failed with status ${response.status}`
+      );
+    }
+
+    return data;
+  };
+
+  // =====================================================
+  // LOAD HOSPITALS
+  // =====================================================
+
   useEffect(() => {
     const loadHospitals = async () => {
       try {
-        const response = await fetch(`${API_URL}/api/hospitals`);
+        setLoadingHospitals(true);
+        setHospitalError("");
 
-        if (!response.ok) {
-          throw new Error("Failed to load hospitals");
-        }
-
-        const data = await response.json();
+        const data = await fetchJSON(`${BASE_URL}/api/hospitals`);
 
         setHospitals(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error("Hospital API error:", err);
+
         setHospitalError(
-          "Unable to load hospitals. Please try again."
+          err instanceof Error
+            ? err.message
+            : "Unable to load hospitals."
         );
       } finally {
         setLoadingHospitals(false);
       }
     };
 
+    loadHospitals();
+  }, []);
+
+  // =====================================================
+  // LOAD DOCTORS
+  // =====================================================
+
+  useEffect(() => {
     const loadDoctors = async () => {
       try {
-        const response = await fetch(`${API_URL}/api/doctors`);
+        setLoadingDoctors(true);
+        setDoctorError("");
 
-        if (!response.ok) {
-          throw new Error("Failed to load doctors");
-        }
-
-        const data = await response.json();
+        const data = await fetchJSON(`${BASE_URL}/api/doctors`);
 
         setDoctors(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error("Doctor API error:", err);
+
         setDoctorError(
-          "Unable to load doctors. Please try again."
+          err instanceof Error
+            ? err.message
+            : "Unable to load doctors."
         );
       } finally {
         setLoadingDoctors(false);
       }
     };
 
+    loadDoctors();
+  }, []);
+
+  // =====================================================
+  // LOAD TREATMENTS
+  // =====================================================
+
+  useEffect(() => {
     const loadTreatments = async () => {
       try {
-        const response = await fetch(`${API_URL}/api/treatments`);
+        setLoadingTreatments(true);
+        setTreatmentError("");
 
-        if (!response.ok) {
-          throw new Error("Failed to load treatments");
-        }
-
-        const data = await response.json();
+        const data = await fetchJSON(`${BASE_URL}/api/treatments`);
 
         setTreatments(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error("Treatment API error:", err);
+
         setTreatmentError(
-          "Unable to load treatments. Please try again."
+          err instanceof Error
+            ? err.message
+            : "Unable to load treatments."
         );
       } finally {
         setLoadingTreatments(false);
       }
     };
 
-    loadHospitals();
-    loadDoctors();
     loadTreatments();
   }, []);
+
+  // =====================================================
+  // FORM CHANGE
+  // =====================================================
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
+
+    setForm((previous) => ({
+      ...previous,
+      [name]: value,
+    }));
 
     setError("");
   };
+
+  // =====================================================
+  // SUBMIT APPOINTMENT
+  // =====================================================
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -155,7 +229,7 @@ export default function AppointmentPage() {
     setLoading(true);
     setError("");
 
-    // Required field validation
+    // Required validation
     if (
       !form.patient_name.trim() ||
       !form.patient_email.trim() ||
@@ -173,7 +247,7 @@ export default function AppointmentPage() {
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    if (!emailRegex.test(form.patient_email)) {
+    if (!emailRegex.test(form.patient_email.trim())) {
       setError("Please enter a valid email address.");
       setLoading(false);
       return;
@@ -182,13 +256,13 @@ export default function AppointmentPage() {
     // Phone validation
     const phoneRegex = /^[0-9]{10}$/;
 
-    if (!phoneRegex.test(form.patient_phone)) {
+    if (!phoneRegex.test(form.patient_phone.trim())) {
       setError("Please enter a valid 10-digit phone number.");
       setLoading(false);
       return;
     }
 
-    // Past date validation
+    // Date validation
     if (form.date < today) {
       setError(
         "Please select today or a future appointment date."
@@ -198,26 +272,26 @@ export default function AppointmentPage() {
     }
 
     try {
-      const response = await fetch(
-        `${API_URL}/api/appointments`,
+      console.log("Submitting appointment to:", `${BASE_URL}/api/appointments`);
+
+      const data = await fetchJSON(
+        `${BASE_URL}/api/appointments`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(form),
+          body: JSON.stringify({
+            patient_name: form.patient_name.trim(),
+            doctor_name: form.doctor_name,
+            date: form.date,
+            hospital_name: form.hospital_name,
+            treatment_name: form.treatment_name,
+            patient_email: form.patient_email.trim(),
+            patient_phone: form.patient_phone.trim(),
+          }),
         }
       );
 
-      const data = await response.json();
+      console.log("Appointment saved:", data);
 
-      if (!response.ok) {
-        throw new Error(
-          data.error || "Failed to book appointment"
-        );
-      }
-
-      // Show success screen
       setSuccess(data);
     } catch (err) {
       console.error("Appointment error:", err);
@@ -232,16 +306,15 @@ export default function AppointmentPage() {
     }
   };
 
-  // ------------------------------------------------
+  // =====================================================
   // SUCCESS SCREEN
-  // ------------------------------------------------
+  // =====================================================
 
   if (success) {
     return (
       <main className="min-h-screen bg-[#f8f7fb] px-6 py-12">
         <div className="mx-auto max-w-3xl">
 
-          {/* Success Icon */}
           <div className="mb-8 text-center">
             <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
               <span className="text-4xl text-green-600">
@@ -260,10 +333,8 @@ export default function AppointmentPage() {
             </p>
           </div>
 
-          {/* Appointment Card */}
           <div className="rounded-3xl border border-purple-100 bg-white p-6 shadow-xl shadow-purple-100/50 md:p-8">
 
-            {/* Appointment ID */}
             <div className="rounded-2xl bg-[#DFC5FE]/35 p-5">
               <p className="text-sm font-medium text-purple-700">
                 APPOINTMENT ID
@@ -278,7 +349,6 @@ export default function AppointmentPage() {
               </p>
             </div>
 
-            {/* Details */}
             <div className="mt-8">
               <h2 className="text-xl font-bold text-slate-900">
                 Appointment Details
@@ -286,84 +356,41 @@ export default function AppointmentPage() {
 
               <div className="mt-5 divide-y divide-slate-100">
 
-                {/* Patient */}
-                <div className="flex flex-col gap-1 py-4 sm:flex-row sm:items-center sm:justify-between">
-                  <span className="text-sm text-slate-500">
-                    Patient
-                  </span>
+                <Detail
+                  label="Patient"
+                  value={success.patient_name}
+                />
 
-                  <span className="font-semibold text-slate-900">
-                    {success.patient_name}
-                  </span>
-                </div>
+                <Detail
+                  label="Doctor"
+                  value={success.doctor_name}
+                />
 
-                {/* Doctor */}
-                <div className="flex flex-col gap-1 py-4 sm:flex-row sm:items-center sm:justify-between">
-                  <span className="text-sm text-slate-500">
-                    Doctor
-                  </span>
+                <Detail
+                  label="Hospital"
+                  value={success.hospital_name}
+                />
 
-                  <span className="font-semibold text-slate-900">
-                    {success.doctor_name}
-                  </span>
-                </div>
+                <Detail
+                  label="Treatment"
+                  value={success.treatment_name}
+                />
 
-                {/* Hospital */}
-                <div className="flex flex-col gap-1 py-4 sm:flex-row sm:items-center sm:justify-between">
-                  <span className="text-sm text-slate-500">
-                    Hospital
-                  </span>
+                <Detail
+                  label="Appointment Date"
+                  value={success.date}
+                />
 
-                  <span className="font-semibold text-slate-900">
-                    {success.hospital_name}
-                  </span>
-                </div>
+                <Detail
+                  label="Email"
+                  value={success.patient_email}
+                />
 
-                {/* Treatment */}
-                <div className="flex flex-col gap-1 py-4 sm:flex-row sm:items-center sm:justify-between">
-                  <span className="text-sm text-slate-500">
-                    Treatment
-                  </span>
+                <Detail
+                  label="Phone"
+                  value={success.patient_phone}
+                />
 
-                  <span className="font-semibold text-slate-900">
-                    {success.treatment_name}
-                  </span>
-                </div>
-
-                {/* Date */}
-                <div className="flex flex-col gap-1 py-4 sm:flex-row sm:items-center sm:justify-between">
-                  <span className="text-sm text-slate-500">
-                    Appointment Date
-                  </span>
-
-                  <span className="font-semibold text-slate-900">
-                    {success.date}
-                  </span>
-                </div>
-
-                {/* Email */}
-                <div className="flex flex-col gap-1 py-4 sm:flex-row sm:items-center sm:justify-between">
-                  <span className="text-sm text-slate-500">
-                    Email
-                  </span>
-
-                  <span className="font-semibold text-slate-900">
-                    {success.patient_email}
-                  </span>
-                </div>
-
-                {/* Phone */}
-                <div className="flex flex-col gap-1 py-4 sm:flex-row sm:items-center sm:justify-between">
-                  <span className="text-sm text-slate-500">
-                    Phone
-                  </span>
-
-                  <span className="font-semibold text-slate-900">
-                    {success.patient_phone}
-                  </span>
-                </div>
-
-                {/* Status */}
                 <div className="flex flex-col gap-1 py-4 sm:flex-row sm:items-center sm:justify-between">
                   <span className="text-sm text-slate-500">
                     Status
@@ -377,7 +404,6 @@ export default function AppointmentPage() {
               </div>
             </div>
 
-            {/* Message */}
             <div className="mt-6 rounded-2xl border border-purple-100 bg-purple-50 p-5">
               <p className="text-sm leading-6 text-purple-900">
                 <strong>What happens next?</strong>
@@ -388,7 +414,6 @@ export default function AppointmentPage() {
               </p>
             </div>
 
-            {/* Buttons */}
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
 
               <button
@@ -408,7 +433,6 @@ export default function AppointmentPage() {
             </div>
           </div>
 
-          {/* Bottom Trust Message */}
           <div className="mt-6 text-center">
             <p className="text-sm text-slate-500">
               Thank you for choosing MediIndia Care 🇮🇳
@@ -420,19 +444,19 @@ export default function AppointmentPage() {
     );
   }
 
-  // ------------------------------------------------
+  // =====================================================
   // APPOINTMENT FORM
-  // ------------------------------------------------
+  // =====================================================
 
   return (
     <main className="min-h-screen bg-white px-6 py-12">
+
       <div className="mx-auto max-w-5xl">
 
-        {/* Header */}
         <div className="mb-10 text-center">
 
           <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-purple-200 bg-purple-50 px-4 py-2">
-            <span className="h-2 w-2 rounded-full bg-purple-600"></span>
+            <span className="h-2 w-2 rounded-full bg-purple-600" />
 
             <span className="text-sm font-semibold text-purple-700">
               Trusted Healthcare • World-Class Treatment
@@ -451,13 +475,13 @@ export default function AppointmentPage() {
             in India. Make your healthcare journey simple,
             transparent and secure.
           </p>
+
         </div>
 
-        {/* Appointment Card */}
         <div className="mx-auto max-w-4xl rounded-3xl border border-purple-100 bg-white p-6 shadow-xl shadow-purple-100/60 md:p-10">
 
-          {/* Card Header */}
           <div className="mb-8 rounded-2xl bg-[#DFC5FE]/35 p-5">
+
             <h2 className="text-xl font-bold text-slate-900">
               Patient & Appointment Details
             </h2>
@@ -466,6 +490,7 @@ export default function AppointmentPage() {
               Enter your details to request a consultation
               with your preferred healthcare provider.
             </p>
+
           </div>
 
           <form onSubmit={handleSubmit}>
@@ -484,7 +509,7 @@ export default function AppointmentPage() {
                   onChange={handleChange}
                   required
                   placeholder="Enter your name"
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-purple-300 focus:ring-4 focus:ring-purple-100"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-slate-900 outline-none focus:border-purple-300 focus:ring-4 focus:ring-purple-100"
                 />
               </div>
 
@@ -501,7 +526,7 @@ export default function AppointmentPage() {
                   onChange={handleChange}
                   required
                   placeholder="you@example.com"
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-purple-300 focus:ring-4 focus:ring-purple-100"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-slate-900 outline-none focus:border-purple-300 focus:ring-4 focus:ring-purple-100"
                 />
               </div>
 
@@ -521,11 +546,11 @@ export default function AppointmentPage() {
                   maxLength={10}
                   pattern="[0-9]{10}"
                   placeholder="10-digit phone number"
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-purple-300 focus:ring-4 focus:ring-purple-100"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-slate-900 outline-none focus:border-purple-300 focus:ring-4 focus:ring-purple-100"
                 />
               </div>
 
-              {/* Appointment Date */}
+              {/* Date */}
               <div>
                 <label className="mb-2 block text-sm font-semibold text-slate-700">
                   Appointment Date
@@ -538,7 +563,7 @@ export default function AppointmentPage() {
                   onChange={handleChange}
                   min={today}
                   required
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-slate-900 outline-none transition focus:border-purple-300 focus:ring-4 focus:ring-purple-100"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-slate-900 outline-none focus:border-purple-300 focus:ring-4 focus:ring-purple-100"
                 />
               </div>
 
@@ -554,8 +579,9 @@ export default function AppointmentPage() {
                   onChange={handleChange}
                   required
                   disabled={loadingHospitals}
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-slate-900 outline-none transition focus:border-purple-300 focus:ring-4 focus:ring-purple-100 disabled:cursor-not-allowed disabled:bg-slate-50"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-slate-900 outline-none focus:border-purple-300 focus:ring-4 focus:ring-purple-100 disabled:bg-slate-50"
                 >
+
                   <option value="">
                     {loadingHospitals
                       ? "Loading hospitals..."
@@ -573,6 +599,7 @@ export default function AppointmentPage() {
                         : ""}
                     </option>
                   ))}
+
                 </select>
 
                 {hospitalError && (
@@ -594,25 +621,34 @@ export default function AppointmentPage() {
                   onChange={handleChange}
                   required
                   disabled={loadingDoctors}
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-slate-900 outline-none transition focus:border-purple-300 focus:ring-4 focus:ring-purple-100 disabled:cursor-not-allowed disabled:bg-slate-50"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-slate-900 outline-none focus:border-purple-300 focus:ring-4 focus:ring-purple-100 disabled:bg-slate-50"
                 >
+
                   <option value="">
                     {loadingDoctors
                       ? "Loading doctors..."
                       : "Select Doctor"}
                   </option>
 
-                  {doctors.map((doctor) => (
-                    <option
-                      key={doctor.id}
-                      value={doctor.name}
-                    >
-                      {doctor.name}
-                      {doctor.specialization
-                        ? ` — ${doctor.specialization}`
-                        : ""}
-                    </option>
-                  ))}
+                  {doctors.map((doctor) => {
+                    const specialization =
+                      doctor.specialization ||
+                      doctor.specialty ||
+                      "";
+
+                    return (
+                      <option
+                        key={doctor.id}
+                        value={doctor.name}
+                      >
+                        {doctor.name}
+                        {specialization
+                          ? ` — ${specialization}`
+                          : ""}
+                      </option>
+                    );
+                  })}
+
                 </select>
 
                 {doctorError && (
@@ -624,6 +660,7 @@ export default function AppointmentPage() {
 
               {/* Treatment */}
               <div className="md:col-span-2">
+
                 <label className="mb-2 block text-sm font-semibold text-slate-700">
                   Treatment
                 </label>
@@ -634,8 +671,9 @@ export default function AppointmentPage() {
                   onChange={handleChange}
                   required
                   disabled={loadingTreatments}
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-slate-900 outline-none transition focus:border-purple-300 focus:ring-4 focus:ring-purple-100 disabled:cursor-not-allowed disabled:bg-slate-50"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-slate-900 outline-none focus:border-purple-300 focus:ring-4 focus:ring-purple-100 disabled:bg-slate-50"
                 >
+
                   <option value="">
                     {loadingTreatments
                       ? "Loading treatments..."
@@ -653,6 +691,7 @@ export default function AppointmentPage() {
                         : ""}
                     </option>
                   ))}
+
                 </select>
 
                 {treatmentError && (
@@ -660,6 +699,7 @@ export default function AppointmentPage() {
                     {treatmentError}
                   </p>
                 )}
+
               </div>
 
             </div>
@@ -671,7 +711,7 @@ export default function AppointmentPage() {
               </div>
             )}
 
-            {/* Submit Button */}
+            {/* Submit */}
             <button
               type="submit"
               disabled={loading}
@@ -683,59 +723,81 @@ export default function AppointmentPage() {
             </button>
 
           </form>
+
         </div>
 
         {/* Trust Features */}
         <div className="mt-8 grid gap-4 md:grid-cols-3">
 
-          {/* Hospitals */}
-          <div className="rounded-2xl border border-purple-100 bg-purple-50/50 p-5 text-center">
-            <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-[#DFC5FE] font-bold text-purple-700">
-              +
-            </div>
+          <TrustCard
+            title="Verified Hospitals"
+            description="Find trusted healthcare providers across India."
+          />
 
-            <h3 className="font-semibold text-slate-900">
-              Verified Hospitals
-            </h3>
+          <TrustCard
+            title="Expert Doctors"
+            description="Connect with experienced medical professionals."
+          />
 
-            <p className="mt-1 text-sm text-slate-600">
-              Find trusted healthcare providers across India.
-            </p>
-          </div>
-
-          {/* Doctors */}
-          <div className="rounded-2xl border border-purple-100 bg-purple-50/50 p-5 text-center">
-            <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-[#DFC5FE] font-bold text-purple-700">
-              +
-            </div>
-
-            <h3 className="font-semibold text-slate-900">
-              Expert Doctors
-            </h3>
-
-            <p className="mt-1 text-sm text-slate-600">
-              Connect with experienced medical professionals.
-            </p>
-          </div>
-
-          {/* Secure */}
-          <div className="rounded-2xl border border-purple-100 bg-purple-50/50 p-5 text-center">
-            <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-[#DFC5FE] font-bold text-purple-700">
-              +
-            </div>
-
-            <h3 className="font-semibold text-slate-900">
-              Simple & Secure
-            </h3>
-
-            <p className="mt-1 text-sm text-slate-600">
-              Submit your consultation request safely and easily.
-            </p>
-          </div>
+          <TrustCard
+            title="Simple & Secure"
+            description="Submit your consultation request safely and easily."
+          />
 
         </div>
 
       </div>
+
     </main>
+  );
+}
+
+// =====================================================
+// SMALL COMPONENTS
+// =====================================================
+
+function Detail({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex flex-col gap-1 py-4 sm:flex-row sm:items-center sm:justify-between">
+      <span className="text-sm text-slate-500">
+        {label}
+      </span>
+
+      <span className="font-semibold text-slate-900">
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function TrustCard({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-purple-100 bg-purple-50/50 p-5 text-center">
+
+      <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-[#DFC5FE] font-bold text-purple-700">
+        +
+      </div>
+
+      <h3 className="font-semibold text-slate-900">
+        {title}
+      </h3>
+
+      <p className="mt-1 text-sm text-slate-600">
+        {description}
+      </p>
+
+    </div>
   );
 }
