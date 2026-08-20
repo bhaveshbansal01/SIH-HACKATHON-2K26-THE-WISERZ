@@ -18,7 +18,7 @@ type AppointmentData = {
 type Hospital = {
   id: number;
   name: string;
-  city?: string; 
+  city?: string;
 };
 
 type Doctor = {
@@ -272,7 +272,10 @@ export default function AppointmentPage() {
     }
 
     try {
-      console.log("Submitting appointment to:", `${BASE_URL}/api/appointments`);
+      console.log(
+        "Submitting appointment to:",
+        `${BASE_URL}/api/appointments`
+      );
 
       const data = await fetchJSON(
         `${BASE_URL}/api/appointments`,
@@ -581,7 +584,6 @@ export default function AppointmentPage() {
                   disabled={loadingHospitals}
                   className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-slate-900 outline-none focus:border-purple-300 focus:ring-4 focus:ring-purple-100 disabled:bg-slate-50"
                 >
-
                   <option value="">
                     {loadingHospitals
                       ? "Loading hospitals..."
@@ -599,7 +601,6 @@ export default function AppointmentPage() {
                         : ""}
                     </option>
                   ))}
-
                 </select>
 
                 {hospitalError && (
@@ -623,7 +624,6 @@ export default function AppointmentPage() {
                   disabled={loadingDoctors}
                   className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-slate-900 outline-none focus:border-purple-300 focus:ring-4 focus:ring-purple-100 disabled:bg-slate-50"
                 >
-
                   <option value="">
                     {loadingDoctors
                       ? "Loading doctors..."
@@ -648,7 +648,6 @@ export default function AppointmentPage() {
                       </option>
                     );
                   })}
-
                 </select>
 
                 {doctorError && (
@@ -673,7 +672,6 @@ export default function AppointmentPage() {
                   disabled={loadingTreatments}
                   className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-slate-900 outline-none focus:border-purple-300 focus:ring-4 focus:ring-purple-100 disabled:bg-slate-50"
                 >
-
                   <option value="">
                     {loadingTreatments
                       ? "Loading treatments..."
@@ -691,7 +689,6 @@ export default function AppointmentPage() {
                         : ""}
                     </option>
                   ))}
-
                 </select>
 
                 {treatmentError && (
