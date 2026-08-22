@@ -269,6 +269,7 @@ app.delete("/api/hospitals/:id", async (req, res) => {
 
 // ===============================
 // GET ALL APPOINTMENTS
+// GET /api/appointments
 // ===============================
 
 app.get("/api/appointments", async (req, res) => {
@@ -292,6 +293,115 @@ app.get("/api/appointments", async (req, res) => {
 
     res.status(500).json({
       error: error.message,
+    });
+  }
+});
+
+// ===============================
+// CREATE APPOINTMENT
+// POST /api/appointments
+// ===============================
+
+app.post("/api/appointments", async (req, res) => {
+  try {
+    const {
+      patient_name,
+      doctor_name,
+      date,
+      hospital_name,
+      treatment_name,
+      patient_email,
+      patient_phone,
+    } = req.body;
+
+    // Required fields
+    if (
+      !patient_name ||
+      !doctor_name ||
+      !date ||
+      !hospital_name ||
+      !treatment_name ||
+      !patient_email ||
+      !patient_phone
+    ) {
+      return res.status(400).json({
+        error: "All appointment details are required",
+      });
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailRegex.test(patient_email.trim())) {
+      return res.status(400).json({
+        error: "Please enter a valid email address",
+      });
+    }
+
+    // 10-digit phone validation
+    const phoneRegex = /^[0-9]{10}$/;
+
+    if (!phoneRegex.test(patient_phone.trim())) {
+      return res.status(400).json({
+        error: "Please enter a valid 10-digit phone number",
+      });
+    }
+
+    // Appointment date validation
+    const appointmentDate = new Date(date);
+    const today = new Date();
+
+    today.setHours(0, 0, 0, 0);
+    appointmentDate.setHours(0, 0, 0, 0);
+
+    if (isNaN(appointmentDate.getTime())) {
+      return res.status(400).json({
+        error: "Please enter a valid appointment date",
+      });
+    }
+
+    if (appointmentDate < today) {
+      return res.status(400).json({
+        error: "Appointment date cannot be in the past",
+      });
+    }
+
+    // Insert into Supabase
+    const { data, error } = await supabase
+      .from("appointments")
+      .insert([
+        {
+          patient_name: patient_name.trim(),
+          doctor_name: doctor_name.trim(),
+          date,
+          hospital_name: hospital_name.trim(),
+          treatment_name: treatment_name.trim(),
+          patient_email: patient_email.trim().toLowerCase(),
+          patient_phone: patient_phone.trim(),
+          status: "Pending",
+        },
+      ])
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Supabase appointment error:", error);
+
+      return res.status(500).json({
+        error: error.message,
+      });
+    }
+
+    console.log("Appointment created successfully:", data);
+
+    // Return actual Supabase appointment record + ID
+    return res.status(201).json(data);
+
+  } catch (error) {
+    console.error("Appointment server error:", error);
+
+    return res.status(500).json({
+      error: error.message || "Failed to create appointment",
     });
   }
 });

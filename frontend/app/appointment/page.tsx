@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 type AppointmentData = {
@@ -19,6 +19,7 @@ type Hospital = {
   id: number;
   name: string;
   city?: string;
+  specialty?: string;
 };
 
 type Doctor = {
@@ -26,18 +27,26 @@ type Doctor = {
   name: string;
   specialization?: string;
   specialty?: string;
+  hospital?: string;
+  location?: string;
 };
 
 type Treatment = {
   id: number;
   name: string;
   specialty?: string;
+  category?: string;
+  hospital?: string;
+  location?: string;
 };
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 const BASE_URL = API_URL.replace(/\/$/, "");
+
+const normalize = (value?: string) =>
+  (value || "").trim().toLowerCase();
 
 export default function AppointmentPage() {
   const router = useRouter();
@@ -69,13 +78,17 @@ export default function AppointmentPage() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState<AppointmentData | null>(null);
+  const [success, setSuccess] =
+    useState<AppointmentData | null>(null);
 
   // =====================================================
-  // SAFE API JSON FUNCTION
+  // SAFE JSON FETCH
   // =====================================================
 
-  const fetchJSON = async (url: string, options?: RequestInit) => {
+  const fetchJSON = async (
+    url: string,
+    options?: RequestInit
+  ) => {
     const response = await fetch(url, {
       ...options,
       headers: {
@@ -87,7 +100,8 @@ export default function AppointmentPage() {
       },
     });
 
-    const contentType = response.headers.get("content-type") || "";
+    const contentType =
+      response.headers.get("content-type") || "";
 
     if (!contentType.includes("application/json")) {
       const text = await response.text();
@@ -108,7 +122,8 @@ export default function AppointmentPage() {
 
     if (!response.ok) {
       throw new Error(
-        data?.error || `Request failed with status ${response.status}`
+        data?.error ||
+          `Request failed with status ${response.status}`
       );
     }
 
@@ -125,7 +140,9 @@ export default function AppointmentPage() {
         setLoadingHospitals(true);
         setHospitalError("");
 
-        const data = await fetchJSON(`${BASE_URL}/api/hospitals`);
+        const data = await fetchJSON(
+          `${BASE_URL}/api/hospitals`
+        );
 
         setHospitals(Array.isArray(data) ? data : []);
       } catch (err) {
@@ -154,7 +171,9 @@ export default function AppointmentPage() {
         setLoadingDoctors(true);
         setDoctorError("");
 
-        const data = await fetchJSON(`${BASE_URL}/api/doctors`);
+        const data = await fetchJSON(
+          `${BASE_URL}/api/doctors`
+        );
 
         setDoctors(Array.isArray(data) ? data : []);
       } catch (err) {
@@ -183,7 +202,9 @@ export default function AppointmentPage() {
         setLoadingTreatments(true);
         setTreatmentError("");
 
-        const data = await fetchJSON(`${BASE_URL}/api/treatments`);
+        const data = await fetchJSON(
+          `${BASE_URL}/api/treatments`
+        );
 
         setTreatments(Array.isArray(data) ? data : []);
       } catch (err) {
@@ -203,33 +224,245 @@ export default function AppointmentPage() {
   }, []);
 
   // =====================================================
+  // SELECTED TREATMENT
+  // =====================================================
+
+  const selectedTreatment = useMemo(() => {
+    return treatments.find(
+      (treatment) =>
+        normalize(treatment.name) ===
+        normalize(form.treatment_name)
+    );
+  }, [treatments, form.treatment_name]);
+
+  // =====================================================
+  // TREATMENT SPECIALTY
+  // =====================================================
+
+  const selectedSpecialty = useMemo(() => {
+    if (!selectedTreatment) {
+      return "";
+    }
+
+    return (
+      selectedTreatment.specialty ||
+      selectedTreatment.category ||
+      ""
+    );
+  }, [selectedTreatment]);
+
+  // =====================================================
+  // DOCTORS MATCHING TREATMENT
+  // =====================================================
+
+  const treatmentDoctors = useMemo(() => {
+    if (!form.treatment_name) {
+      return [];
+    }
+
+    /*
+      Preferred matching:
+      Treatment specialty/category
+              ↓
+      Doctor specialty/specialization
+    */
+
+    if (selectedSpecialty) {
+      const matchingDoctors = doctors.filter((doctor) => {
+        const doctorSpecialty =
+          doctor.specialty ||
+          doctor.specialization ||
+          "";
+
+        return (
+          normalize(doctorSpecialty) ===
+          normalize(selectedSpecialty)
+        );
+      });
+
+      if (matchingDoctors.length > 0) {
+        return matchingDoctors;
+      }
+    }
+
+    /*
+      Fallback:
+      If treatment has a hospital value,
+      doctors from that hospital are allowed.
+    */
+
+    if (selectedTreatment?.hospital) {
+      const hospitalDoctors = doctors.filter(
+        (doctor) =>
+          normalize(doctor.hospital) ===
+          normalize(selectedTreatment.hospital)
+      );
+
+      if (hospitalDoctors.length > 0) {
+        return hospitalDoctors;
+      }
+    }
+
+    /*
+      Final fallback:
+      Do NOT break appointment booking if older
+      Supabase records don't have specialty mapping.
+    */
+
+    return doctors;
+  }, [
+    doctors,
+    form.treatment_name,
+    selectedSpecialty,
+    selectedTreatment,
+  ]);
+
+  // =====================================================
+  // HOSPITALS AVAILABLE FOR TREATMENT
+  // =====================================================
+
+  const availableHospitals = useMemo(() => {
+    if (!form.treatment_name) {
+      return [];
+    }
+
+    /*
+      If treatment itself contains a hospital,
+      use that hospital first.
+    */
+
+    if (selectedTreatment?.hospital) {
+      const directHospitals = hospitals.filter(
+        (hospital) =>
+          normalize(hospital.name) ===
+          normalize(selectedTreatment.hospital)
+      );
+
+      if (directHospitals.length > 0) {
+        return directHospitals;
+      }
+    }
+
+    /*
+      Otherwise get hospitals from doctors who
+      match the selected treatment.
+    */
+
+    const doctorHospitalNames = new Set(
+      treatmentDoctors
+        .map((doctor) => normalize(doctor.hospital))
+        .filter(Boolean)
+    );
+
+    const matchedHospitals = hospitals.filter(
+      (hospital) =>
+        doctorHospitalNames.has(normalize(hospital.name))
+    );
+
+    if (matchedHospitals.length > 0) {
+      return matchedHospitals;
+    }
+
+    /*
+      Fallback for incomplete database relationships.
+    */
+
+    return hospitals;
+  }, [
+    form.treatment_name,
+    selectedTreatment,
+    treatmentDoctors,
+    hospitals,
+  ]);
+
+  // =====================================================
+  // DOCTORS AVAILABLE IN SELECTED HOSPITAL
+  // =====================================================
+
+  const availableDoctors = useMemo(() => {
+    if (
+      !form.treatment_name ||
+      !form.hospital_name
+    ) {
+      return [];
+    }
+
+    const matchingDoctors = treatmentDoctors.filter(
+      (doctor) =>
+        normalize(doctor.hospital) ===
+        normalize(form.hospital_name)
+    );
+
+    if (matchingDoctors.length > 0) {
+      return matchingDoctors;
+    }
+
+    /*
+      Fallback if doctor records do not contain
+      hospital names.
+    */
+
+    return treatmentDoctors;
+  }, [
+    treatmentDoctors,
+    form.treatment_name,
+    form.hospital_name,
+  ]);
+
+  // =====================================================
   // FORM CHANGE
   // =====================================================
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement
+    >
   ) => {
     const { name, value } = e.target;
+
+    setError("");
+
+    // Treatment changed
+    if (name === "treatment_name") {
+      setForm((previous) => ({
+        ...previous,
+        treatment_name: value,
+        hospital_name: "",
+        doctor_name: "",
+      }));
+
+      return;
+    }
+
+    // Hospital changed
+    if (name === "hospital_name") {
+      setForm((previous) => ({
+        ...previous,
+        hospital_name: value,
+        doctor_name: "",
+      }));
+
+      return;
+    }
 
     setForm((previous) => ({
       ...previous,
       [name]: value,
     }));
-
-    setError("");
   };
 
   // =====================================================
-  // SUBMIT APPOINTMENT
+  // SUBMIT
   // =====================================================
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (
+    e: React.FormEvent
+  ) => {
     e.preventDefault();
 
     setLoading(true);
     setError("");
 
-    // Required validation
     if (
       !form.patient_name.trim() ||
       !form.patient_email.trim() ||
@@ -239,30 +472,42 @@ export default function AppointmentPage() {
       !form.doctor_name ||
       !form.treatment_name
     ) {
-      setError("All appointment details are required.");
+      setError(
+        "All appointment details are required."
+      );
       setLoading(false);
       return;
     }
 
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailRegex =
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    if (!emailRegex.test(form.patient_email.trim())) {
-      setError("Please enter a valid email address.");
+    if (
+      !emailRegex.test(
+        form.patient_email.trim()
+      )
+    ) {
+      setError(
+        "Please enter a valid email address."
+      );
       setLoading(false);
       return;
     }
 
-    // Phone validation
     const phoneRegex = /^[0-9]{10}$/;
 
-    if (!phoneRegex.test(form.patient_phone.trim())) {
-      setError("Please enter a valid 10-digit phone number.");
+    if (
+      !phoneRegex.test(
+        form.patient_phone.trim()
+      )
+    ) {
+      setError(
+        "Please enter a valid 10-digit phone number."
+      );
       setLoading(false);
       return;
     }
 
-    // Date validation
     if (form.date < today) {
       setError(
         "Please select today or a future appointment date."
@@ -272,32 +517,33 @@ export default function AppointmentPage() {
     }
 
     try {
-      console.log(
-        "Submitting appointment to:",
-        `${BASE_URL}/api/appointments`
-      );
-
       const data = await fetchJSON(
         `${BASE_URL}/api/appointments`,
         {
           method: "POST",
           body: JSON.stringify({
-            patient_name: form.patient_name.trim(),
+            patient_name:
+              form.patient_name.trim(),
             doctor_name: form.doctor_name,
             date: form.date,
-            hospital_name: form.hospital_name,
-            treatment_name: form.treatment_name,
-            patient_email: form.patient_email.trim(),
-            patient_phone: form.patient_phone.trim(),
+            hospital_name:
+              form.hospital_name,
+            treatment_name:
+              form.treatment_name,
+            patient_email:
+              form.patient_email.trim(),
+            patient_phone:
+              form.patient_phone.trim(),
           }),
         }
       );
 
-      console.log("Appointment saved:", data);
-
       setSuccess(data);
     } catch (err) {
-      console.error("Appointment error:", err);
+      console.error(
+        "Appointment error:",
+        err
+      );
 
       setError(
         err instanceof Error
@@ -310,7 +556,7 @@ export default function AppointmentPage() {
   };
 
   // =====================================================
-  // SUCCESS SCREEN
+  // SUCCESS
   // =====================================================
 
   if (success) {
@@ -319,6 +565,7 @@ export default function AppointmentPage() {
         <div className="mx-auto max-w-3xl">
 
           <div className="mb-8 text-center">
+
             <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
               <span className="text-4xl text-green-600">
                 ✓
@@ -330,10 +577,12 @@ export default function AppointmentPage() {
             </h1>
 
             <p className="mx-auto mt-3 max-w-xl text-slate-600">
-              Your consultation request has been successfully
-              submitted. Our healthcare team will review your
-              request and contact you shortly.
+              Your consultation request has been
+              successfully submitted. Our healthcare
+              team will review your request and contact
+              you shortly.
             </p>
+
           </div>
 
           <div className="rounded-3xl border border-purple-100 bg-white p-6 shadow-xl shadow-purple-100/50 md:p-8">
@@ -348,11 +597,13 @@ export default function AppointmentPage() {
               </p>
 
               <p className="mt-1 text-sm text-slate-600">
-                Please keep this ID for future reference.
+                Please keep this ID for future
+                reference.
               </p>
             </div>
 
             <div className="mt-8">
+
               <h2 className="text-xl font-bold text-slate-900">
                 Appointment Details
               </h2>
@@ -365,8 +616,8 @@ export default function AppointmentPage() {
                 />
 
                 <Detail
-                  label="Doctor"
-                  value={success.doctor_name}
+                  label="Treatment"
+                  value={success.treatment_name}
                 />
 
                 <Detail
@@ -375,8 +626,8 @@ export default function AppointmentPage() {
                 />
 
                 <Detail
-                  label="Treatment"
-                  value={success.treatment_name}
+                  label="Doctor"
+                  value={success.doctor_name}
                 />
 
                 <Detail
@@ -395,6 +646,7 @@ export default function AppointmentPage() {
                 />
 
                 <div className="flex flex-col gap-1 py-4 sm:flex-row sm:items-center sm:justify-between">
+
                   <span className="text-sm text-slate-500">
                     Status
                   </span>
@@ -402,53 +654,56 @@ export default function AppointmentPage() {
                   <span className="inline-flex w-fit rounded-full bg-yellow-100 px-3 py-1 text-sm font-semibold text-yellow-700">
                     {success.status || "Pending"}
                   </span>
+
                 </div>
 
               </div>
             </div>
 
             <div className="mt-6 rounded-2xl border border-purple-100 bg-purple-50 p-5">
+
               <p className="text-sm leading-6 text-purple-900">
-                <strong>What happens next?</strong>
+                <strong>
+                  What happens next?
+                </strong>
                 <br />
-                Our team will verify your consultation request
-                and contact you using the phone number or email
-                provided above.
+                Our team will verify your consultation
+                request and contact you using the phone
+                number or email provided above.
               </p>
+
             </div>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
 
               <button
-                onClick={() => router.push("/")}
+                onClick={() =>
+                  router.push("/")
+                }
                 className="flex-1 rounded-xl bg-[#DFC5FE] px-6 py-4 font-bold text-[#4C1D95] transition hover:bg-[#d5b8f4]"
               >
                 Back to Home
               </button>
 
               <button
-                onClick={() => router.push("/doctors")}
+                onClick={() =>
+                  router.push("/doctors")
+                }
                 className="flex-1 rounded-xl border border-purple-200 bg-white px-6 py-4 font-bold text-purple-700 transition hover:bg-purple-50"
               >
                 Explore Doctors
               </button>
 
             </div>
-          </div>
 
-          <div className="mt-6 text-center">
-            <p className="text-sm text-slate-500">
-              Thank you for choosing MediIndia Care 🇮🇳
-            </p>
           </div>
-
         </div>
       </main>
     );
   }
 
   // =====================================================
-  // APPOINTMENT FORM
+  // FORM
   // =====================================================
 
   return (
@@ -459,11 +714,14 @@ export default function AppointmentPage() {
         <div className="mb-10 text-center">
 
           <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-purple-200 bg-purple-50 px-4 py-2">
+
             <span className="h-2 w-2 rounded-full bg-purple-600" />
 
             <span className="text-sm font-semibold text-purple-700">
-              Trusted Healthcare • World-Class Treatment
+              Trusted Healthcare • World-Class
+              Treatment
             </span>
+
           </div>
 
           <h1 className="text-4xl font-bold tracking-tight text-slate-900 md:text-5xl">
@@ -474,9 +732,9 @@ export default function AppointmentPage() {
           </h1>
 
           <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-slate-600">
-            Connect with trusted hospitals and expert doctors
-            in India. Make your healthcare journey simple,
-            transparent and secure.
+            Choose your treatment first. We will then
+            show the relevant hospitals and doctors
+            available for your consultation.
           </p>
 
         </div>
@@ -490,8 +748,9 @@ export default function AppointmentPage() {
             </h2>
 
             <p className="mt-1 text-sm text-slate-600">
-              Enter your details to request a consultation
-              with your preferred healthcare provider.
+              Select your treatment, hospital and
+              available doctor to request a
+              consultation.
             </p>
 
           </div>
@@ -500,7 +759,8 @@ export default function AppointmentPage() {
 
             <div className="grid gap-6 md:grid-cols-2">
 
-              {/* Patient Name */}
+              {/* PATIENT NAME */}
+
               <div>
                 <label className="mb-2 block text-sm font-semibold text-slate-700">
                   Patient Name
@@ -516,7 +776,8 @@ export default function AppointmentPage() {
                 />
               </div>
 
-              {/* Email */}
+              {/* EMAIL */}
+
               <div>
                 <label className="mb-2 block text-sm font-semibold text-slate-700">
                   Email Address
@@ -533,7 +794,8 @@ export default function AppointmentPage() {
                 />
               </div>
 
-              {/* Phone */}
+              {/* PHONE */}
+
               <div>
                 <label className="mb-2 block text-sm font-semibold text-slate-700">
                   Phone Number
@@ -553,7 +815,8 @@ export default function AppointmentPage() {
                 />
               </div>
 
-              {/* Date */}
+              {/* DATE */}
+
               <div>
                 <label className="mb-2 block text-sm font-semibold text-slate-700">
                   Appointment Date
@@ -570,98 +833,12 @@ export default function AppointmentPage() {
                 />
               </div>
 
-              {/* Hospital */}
-              <div>
-                <label className="mb-2 block text-sm font-semibold text-slate-700">
-                  Hospital
-                </label>
+              {/* TREATMENT - FIRST */}
 
-                <select
-                  name="hospital_name"
-                  value={form.hospital_name}
-                  onChange={handleChange}
-                  required
-                  disabled={loadingHospitals}
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-slate-900 outline-none focus:border-purple-300 focus:ring-4 focus:ring-purple-100 disabled:bg-slate-50"
-                >
-                  <option value="">
-                    {loadingHospitals
-                      ? "Loading hospitals..."
-                      : "Select Hospital"}
-                  </option>
-
-                  {hospitals.map((hospital) => (
-                    <option
-                      key={hospital.id}
-                      value={hospital.name}
-                    >
-                      {hospital.name}
-                      {hospital.city
-                        ? ` — ${hospital.city}`
-                        : ""}
-                    </option>
-                  ))}
-                </select>
-
-                {hospitalError && (
-                  <p className="mt-2 text-sm text-red-600">
-                    {hospitalError}
-                  </p>
-                )}
-              </div>
-
-              {/* Doctor */}
-              <div>
-                <label className="mb-2 block text-sm font-semibold text-slate-700">
-                  Doctor
-                </label>
-
-                <select
-                  name="doctor_name"
-                  value={form.doctor_name}
-                  onChange={handleChange}
-                  required
-                  disabled={loadingDoctors}
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-slate-900 outline-none focus:border-purple-300 focus:ring-4 focus:ring-purple-100 disabled:bg-slate-50"
-                >
-                  <option value="">
-                    {loadingDoctors
-                      ? "Loading doctors..."
-                      : "Select Doctor"}
-                  </option>
-
-                  {doctors.map((doctor) => {
-                    const specialization =
-                      doctor.specialization ||
-                      doctor.specialty ||
-                      "";
-
-                    return (
-                      <option
-                        key={doctor.id}
-                        value={doctor.name}
-                      >
-                        {doctor.name}
-                        {specialization
-                          ? ` — ${specialization}`
-                          : ""}
-                      </option>
-                    );
-                  })}
-                </select>
-
-                {doctorError && (
-                  <p className="mt-2 text-sm text-red-600">
-                    {doctorError}
-                  </p>
-                )}
-              </div>
-
-              {/* Treatment */}
               <div className="md:col-span-2">
 
                 <label className="mb-2 block text-sm font-semibold text-slate-700">
-                  Treatment
+                  1. Select Treatment
                 </label>
 
                 <select
@@ -672,23 +849,35 @@ export default function AppointmentPage() {
                   disabled={loadingTreatments}
                   className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-slate-900 outline-none focus:border-purple-300 focus:ring-4 focus:ring-purple-100 disabled:bg-slate-50"
                 >
+
                   <option value="">
                     {loadingTreatments
                       ? "Loading treatments..."
                       : "Select Treatment"}
                   </option>
 
-                  {treatments.map((treatment) => (
-                    <option
-                      key={treatment.id}
-                      value={treatment.name}
-                    >
-                      {treatment.name}
-                      {treatment.specialty
-                        ? ` — ${treatment.specialty}`
-                        : ""}
-                    </option>
-                  ))}
+                  {treatments.map(
+                    (treatment) => {
+
+                      const specialty =
+                        treatment.specialty ||
+                        treatment.category ||
+                        "";
+
+                      return (
+                        <option
+                          key={treatment.id}
+                          value={treatment.name}
+                        >
+                          {treatment.name}
+                          {specialty
+                            ? ` — ${specialty}`
+                            : ""}
+                        </option>
+                      );
+                    }
+                  )}
+
                 </select>
 
                 {treatmentError && (
@@ -699,16 +888,180 @@ export default function AppointmentPage() {
 
               </div>
 
+              {/* HOSPITAL */}
+
+              <div>
+
+                <label className="mb-2 block text-sm font-semibold text-slate-700">
+                  2. Select Hospital
+                </label>
+
+                <select
+                  name="hospital_name"
+                  value={form.hospital_name}
+                  onChange={handleChange}
+                  required
+                  disabled={
+                    !form.treatment_name ||
+                    loadingHospitals ||
+                    loadingDoctors
+                  }
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-slate-900 outline-none focus:border-purple-300 focus:ring-4 focus:ring-purple-100 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
+                >
+
+                  <option value="">
+                    {!form.treatment_name
+                      ? "Select treatment first"
+                      : loadingHospitals ||
+                        loadingDoctors
+                      ? "Finding hospitals..."
+                      : availableHospitals.length === 0
+                      ? "No hospital available"
+                      : "Select Hospital"}
+                  </option>
+
+                  {availableHospitals.map(
+                    (hospital) => (
+                      <option
+                        key={hospital.id}
+                        value={hospital.name}
+                      >
+                        {hospital.name}
+                        {hospital.city
+                          ? ` — ${hospital.city}`
+                          : ""}
+                      </option>
+                    )
+                  )}
+
+                </select>
+
+                {hospitalError && (
+                  <p className="mt-2 text-sm text-red-600">
+                    {hospitalError}
+                  </p>
+                )}
+
+              </div>
+
+              {/* DOCTOR */}
+
+              <div>
+
+                <label className="mb-2 block text-sm font-semibold text-slate-700">
+                  3. Select Doctor
+                </label>
+
+                <select
+                  name="doctor_name"
+                  value={form.doctor_name}
+                  onChange={handleChange}
+                  required
+                  disabled={
+                    !form.treatment_name ||
+                    !form.hospital_name ||
+                    loadingDoctors
+                  }
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-slate-900 outline-none focus:border-purple-300 focus:ring-4 focus:ring-purple-100 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
+                >
+
+                  <option value="">
+                    {!form.treatment_name
+                      ? "Select treatment first"
+                      : !form.hospital_name
+                      ? "Select hospital first"
+                      : loadingDoctors
+                      ? "Finding doctors..."
+                      : availableDoctors.length === 0
+                      ? "No doctor available"
+                      : "Select Doctor"}
+                  </option>
+
+                  {availableDoctors.map(
+                    (doctor) => {
+
+                      const specialty =
+                        doctor.specialty ||
+                        doctor.specialization ||
+                        "";
+
+                      return (
+                        <option
+                          key={doctor.id}
+                          value={doctor.name}
+                        >
+                          {doctor.name}
+                          {specialty
+                            ? ` — ${specialty}`
+                            : ""}
+                        </option>
+                      );
+                    }
+                  )}
+
+                </select>
+
+                {doctorError && (
+                  <p className="mt-2 text-sm text-red-600">
+                    {doctorError}
+                  </p>
+                )}
+
+              </div>
+
             </div>
 
-            {/* Error */}
+            {/* SELECTION SUMMARY */}
+
+            {form.treatment_name && (
+              <div className="mt-6 rounded-xl border border-purple-100 bg-purple-50/60 p-4">
+
+                <p className="text-sm font-semibold text-purple-800">
+                  Your healthcare selection
+                </p>
+
+                <div className="mt-2 flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-600">
+
+                  <span>
+                    Treatment:{" "}
+                    <strong className="text-slate-900">
+                      {form.treatment_name}
+                    </strong>
+                  </span>
+
+                  {form.hospital_name && (
+                    <span>
+                      Hospital:{" "}
+                      <strong className="text-slate-900">
+                        {form.hospital_name}
+                      </strong>
+                    </span>
+                  )}
+
+                  {form.doctor_name && (
+                    <span>
+                      Doctor:{" "}
+                      <strong className="text-slate-900">
+                        {form.doctor_name}
+                      </strong>
+                    </span>
+                  )}
+
+                </div>
+
+              </div>
+            )}
+
+            {/* ERROR */}
+
             {error && (
               <div className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
                 {error}
               </div>
             )}
 
-            {/* Submit */}
+            {/* SUBMIT */}
+
             <button
               type="submit"
               disabled={loading}
@@ -723,7 +1076,8 @@ export default function AppointmentPage() {
 
         </div>
 
-        {/* Trust Features */}
+        {/* TRUST CARDS */}
+
         <div className="mt-8 grid gap-4 md:grid-cols-3">
 
           <TrustCard
@@ -762,6 +1116,7 @@ function Detail({
 }) {
   return (
     <div className="flex flex-col gap-1 py-4 sm:flex-row sm:items-center sm:justify-between">
+
       <span className="text-sm text-slate-500">
         {label}
       </span>
@@ -769,6 +1124,7 @@ function Detail({
       <span className="font-semibold text-slate-900">
         {value}
       </span>
+
     </div>
   );
 }
