@@ -1,27 +1,38 @@
 "use client";
 
+import { Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-export default function AppointmentSuccessPage() {
+function AppointmentSuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const patientName = searchParams.get("patient_name") || "Patient";
-  const treatment = searchParams.get("treatment") || "Selected Treatment";
-  const doctor = searchParams.get("doctor") || "Selected Doctor";
-  const hospital = searchParams.get("hospital") || "Selected Hospital";
-  const date = searchParams.get("date") || "Selected Date";
+  const patientName =
+    searchParams.get("patient_name") || "Patient";
+
+  const treatment =
+    searchParams.get("treatment") || "Selected Treatment";
+
+  const doctor =
+    searchParams.get("doctor") || "Selected Doctor";
+
+  const hospital =
+    searchParams.get("hospital") || "Selected Hospital";
+
+  const date =
+    searchParams.get("date") || "Selected Date";
 
   return (
     <main className="min-h-screen bg-[#f8f7fb] flex items-center justify-center px-6 py-12">
       <div className="w-full max-w-2xl">
 
-        {/* SUCCESS CARD */}
         <div className="rounded-3xl border border-gray-100 bg-white p-8 text-center shadow-xl md:p-12">
 
           {/* SUCCESS ICON */}
           <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
-            <span className="text-4xl text-green-600">✓</span>
+            <span className="text-4xl text-green-600">
+              ✓
+            </span>
           </div>
 
           {/* HEADING */}
@@ -34,9 +45,9 @@ export default function AppointmentSuccessPage() {
           </h1>
 
           <p className="mx-auto mt-4 max-w-lg text-gray-600">
-            Thank you, {patientName}. Your consultation request has been
-            successfully submitted. Our healthcare team will contact you
-            shortly with further details.
+            Thank you, {patientName}. Your consultation request
+            has been successfully submitted. Our healthcare team
+            will contact you shortly with further details.
           </p>
 
           {/* APPOINTMENT DETAILS */}
@@ -103,8 +114,9 @@ export default function AppointmentSuccessPage() {
 
           {/* INFO */}
           <div className="mt-6 rounded-xl bg-blue-50 p-4 text-sm text-blue-700">
-            📩 Please keep your email and phone available. You may receive
-            confirmation or follow-up communication from the hospital.
+            Please keep your email and phone available. You may
+            receive confirmation or follow-up communication from
+            the hospital.
           </div>
 
           {/* BUTTONS */}
@@ -130,5 +142,21 @@ export default function AppointmentSuccessPage() {
 
       </div>
     </main>
+  );
+}
+
+export default function AppointmentSuccessPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen bg-[#f8f7fb] flex items-center justify-center">
+          <p className="text-gray-500">
+            Loading appointment details...
+          </p>
+        </main>
+      }
+    >
+      <AppointmentSuccessContent />
+    </Suspense>
   );
 }
