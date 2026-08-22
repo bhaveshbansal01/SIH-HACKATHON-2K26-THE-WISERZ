@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 type AppointmentData = {
@@ -48,7 +48,7 @@ const BASE_URL = API_URL.replace(/\/$/, "");
 const normalize = (value?: string) =>
   (value || "").trim().toLowerCase();
 
-export default function AppointmentPage() {
+function AppointmentContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -1100,6 +1100,24 @@ export default function AppointmentPage() {
       </div>
 
     </main>
+  );
+}
+
+// =====================================================
+// PAGE WRAPPER
+// =====================================================
+
+export default function AppointmentPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen bg-white flex items-center justify-center px-6 py-12">
+          <p className="text-slate-500">Loading appointment page...</p>
+        </main>
+      }
+    >
+      <AppointmentContent />
+    </Suspense>
   );
 }
 
